@@ -1,0 +1,859 @@
+:root {
+    --info-color: #3b82f6;
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --white: #ffffff;
+}
+
+.checklistContainer {
+    min-height: 100vh;
+    background-color: var(--gray-50);
+    color: var(--gray-900);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+.pageContainer {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+/* --- Header --- */
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.headerContent h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.headerContent p {
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+.realTimeIndicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.realTimeDot {
+    width: 0.5rem;
+    height: 0.5rem;
+    background-color: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.realTimeText {
+    font-size: 0.875rem;
+    color: var(--success-color);
+}
+
+.headerActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* --- Buttons --- */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.buttonPrimary {
+    background-color: var(--info-color);
+    color: var(--white);
+}
+
+.buttonPrimary:hover {
+    background-color: #2563eb;
+}
+
+.buttonSuccess {
+    background-color: var(--success-color);
+    color: var(--white);
+}
+
+.buttonSuccess:hover:not(:disabled) {
+    background-color: #16a34a;
+}
+
+.buttonSuccessOutline {
+    background-color: var(--white);
+    color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.buttonSuccessOutline:hover {
+    background-color: rgba(34, 197, 94, 0.1);
+}
+
+.buttonDanger {
+    background-color: var(--danger-color);
+    color: var(--white);
+}
+
+.buttonDanger:hover {
+    background-color: #dc2626;
+}
+
+.buttonDangerOutline {
+    background-color: var(--white);
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.buttonDangerOutline:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.buttonOutline {
+    background-color: var(--white);
+    color: var(--gray-700);
+    border-color: var(--gray-300);
+}
+
+.buttonOutline:hover {
+    background-color: var(--gray-50);
+}
+
+.buttonDisabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.buttonSmall {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.buttonIcon {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+}
+
+/* --- Card --- */
+.card {
+    background-color: var(--white);
+    border-radius: 0.5rem;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.cardHeader {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.cardHeaderWithProgress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cardTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.cardDescription {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+.cardContent {
+    padding: 1.5rem;
+}
+
+.progressStats {
+    text-align: right;
+}
+
+.progressValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.progressLabel {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+/* --- Progress Bar --- */
+.progressBar {
+    width: 100%;
+    height: 0.5rem;
+    background-color: var(--gray-300);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progressFill {
+    height: 100%;
+    background-color: var(--info-color);
+    transition: width 0.3s ease;
+}
+
+/* --- Stats Grid --- */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    text-align: center;
+}
+
+.statCard {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.statCardSuccess {
+    background-color: rgba(34, 197, 94, 0.1);
+}
+
+.statCardDanger {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.statCardMuted {
+    background-color: var(--gray-100);
+}
+
+.statValue {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.statValueSuccess {
+    color: var(--success-color);
+}
+
+.statValueDanger {
+    color: var(--danger-color);
+}
+
+.statValueMuted {
+    color: var(--gray-500);
+}
+
+.statLabel {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+/* --- Tabs --- */
+.tabs {
+    margin-top: 1rem;
+}
+
+.tabsList {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background-color: var(--gray-100);
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.tabsTrigger {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tabsTrigger:hover {
+    background-color: var(--white);
+}
+
+.tabsTriggerActive {
+    background-color: var(--white);
+    color: var(--gray-900);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.tabsContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* --- Checklist Item Card --- */
+.checklistCard {
+    background-color: var(--white);
+    border-radius: 0.5rem;
+    border: 1px solid var(--gray-200);
+    border-left: 4px solid var(--info-color);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.checklistHeader {
+    padding: 1rem 1.5rem 0.75rem 1.5rem;
+}
+
+.checklistHeaderTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.checklistHeaderLeft {
+    flex: 1;
+}
+
+.priorityIndicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.priorityIcon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.priorityHigh {
+    color: var(--danger-color);
+}
+
+.priorityMedium {
+    color: var(--warning-color);
+}
+
+.priorityLow {
+    color: var(--gray-500);
+}
+
+.priorityText {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-500);
+}
+
+.itemTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.itemCode {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    font-weight: 400;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.checklistContent {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+/* --- Deadline Info --- */
+.deadlineInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+.deadlineIcon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+/* --- Empty State --- */
+.emptyState {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    background-color: var(--gray-50);
+    border-radius: 0.5rem;
+    border: 1px dashed var(--gray-300);
+}
+
+/* --- Badge --- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badgeSuccess {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+}
+
+.badgeDanger {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.badgeSecondary {
+    background-color: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.badgeOutline {
+    background-color: transparent;
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+}
+
+/* --- Observation Section --- */
+.observationSection {
+    margin-bottom: 1rem;
+}
+
+.observationHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.observationIcon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--gray-500);
+}
+
+.observationIconRT {
+    color: var(--info-color);
+}
+
+.observationLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+.observationDisplay {
+    padding: 0.75rem;
+    background-color: var(--gray-100);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+}
+
+.waitingForRT {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px dashed var(--warning-color);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--warning-color);
+    font-style: italic;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--info-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* --- Photo Indicators --- */
+.photoIndicator {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background-color: var(--gray-100);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.photoIndicatorRT {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+}
+
+/* --- Completion Card --- */
+.completionCard {
+    margin-top: 1.5rem;
+    background: linear-gradient(to right, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: 0.5rem;
+}
+
+.completionCardRT {
+    background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.completionContent {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.completionIcon {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+}
+
+.completionIconSuccess {
+    color: var(--success-color);
+}
+
+.completionIconPrimary {
+    color: var(--info-color);
+}
+
+.completionTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--gray-900);
+}
+
+.completionDescription {
+    color: var(--gray-500);
+    margin-bottom: 1rem;
+}
+
+/* --- Warning Badge --- */
+.badgeWarning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.statCardWarning {
+    background-color: rgba(245, 158, 11, 0.1);
+}
+
+.statValueWarning {
+    color: var(--warning-color);
+}
+
+/* --- RT Submission Section --- */
+.rtSubmissionSection {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.375rem;
+}
+
+/* --- History Section --- */
+.historySection {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.5rem;
+}
+
+.historyHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.historyIcon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--gray-500);
+}
+
+.historyLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.historyList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.historyItem {
+    padding: 0.75rem;
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.historyItemHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.historyUser {
+    font-weight: 500;
+}
+
+.historyUserFiscal {
+    color: var(--info-color);
+}
+
+.historyUserRT {
+    color: var(--success-color);
+}
+
+.historyDate {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.historyAction {
+    color: var(--gray-700);
+    margin-bottom: 0.25rem;
+}
+
+.historyComment {
+    color: var(--gray-500);
+    font-style: italic;
+}
+
+/* --- Readonly Card --- */
+.checklistCardReadonly {
+    opacity: 0.8;
+    border-left-color: var(--success-color);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .pageHeader {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .headerActions {
+        width: 100%;
+    }
+
+    .headerActions .button {
+        flex: 1;
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .tabsList {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .actionButtons {
+        flex-direction: column;
+    }
+
+    .actionButtons .button {
+        width: 100%;
+    }
+}
+
+/* --- Modal --- */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+    background-color: var(--white);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modalIcon {
+    width: 4rem;
+    height: 4rem;
+    color: var(--success-color);
+    margin-bottom: 1rem;
+}
+
+.modalTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.modalDescription {
+    color: var(--gray-500);
+    margin-bottom: 1.5rem;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: center;
+}
+
+/* --- Tooltip --- */
+.tooltipWrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltipText {
+    visibility: hidden;
+    width: 240px;
+    background-color: var(--gray-800);
+    color: var(--white);
+    text-align: center;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    position: absolute;
+    z-index: 20;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.2s, visibility 0.2s;
+    font-size: 0.75rem;
+    font-weight: 500;
+    pointer-events: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    white-space: normal;
+    line-height: 1.4;
+}
+
+.tooltipText::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--gray-800) transparent transparent transparent;
+}
+
+.tooltipWrapper:hover .tooltipText {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Override disabled state for all buttons to ensure "greyed out" look */
+.button:disabled {
+    background-color: var(--gray-200) !important;
+    color: var(--gray-400) !important;
+    border-color: transparent !important;
+    cursor: not-allowed;
+    opacity: 1;
+    box-shadow: none;
+    transform: none;
+}

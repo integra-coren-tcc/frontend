@@ -1,0 +1,126 @@
+.historyContainer {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.historyTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timelineItem {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+}
+
+.timelineItem:last-child {
+    padding-bottom: 0;
+}
+
+.timelineDot {
+    position: absolute;
+    left: 0;
+    top: 0.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #e5e7eb;
+}
+
+.timelineLine {
+    position: absolute;
+    left: 0.375rem;
+    top: 1rem;
+    bottom: -0.5rem;
+    width: 1px;
+    background-color: #e5e7eb;
+}
+
+.commentCard {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.commentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.userName {
+    font-weight: 600;
+    color: #111827;
+}
+
+.userRole {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    background-color: rgba(59, 130, 246, 0.1);
+    border-radius: 0.25rem;
+}
+
+.timestamp {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.commentText {
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.attachmentsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+.attachmentLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: #2563eb;
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    background-color: #f0f9ff;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+    width: fit-content;
+}
+
+.attachmentLink:hover {
+    background-color: #dbeafe;
+    text-decoration: underline;
+}

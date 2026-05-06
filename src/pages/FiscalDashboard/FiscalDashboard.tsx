@@ -1,0 +1,466 @@
+// src/pages/FiscalDashboard.tsx
+import React, { useState, useEffect } from "react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  CheckSquare,
+  AlertTriangle,
+  Bell,
+} from "lucide-react";
+import Header from "@/components/layout/Header";
+import { useNavigate } from "react-router-dom";
+import styles from "./FiscalDashboard.module.css";
+import { inspectionsService } from "@/services/inspectionsService";
+import { useSocket } from "@/contexts/SocketContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
+import { Inspection, InspectionStatus } from "@/@types/Inspection";
+import ReportModal from "./ReportModal";
+
+type Stats = {
+  scheduledFiscalizations: number;
+  inProgress: number;
+  completedThisMonth: number;
+  pendingReports: number;
+};
+
+import { useUserStore } from "@/stores/userStore";
+
+const FiscalDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useUserStore();
+  const { socket } = useSocket();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [stats, setStats] = useState<Stats>({
+    scheduledFiscalizations: 0,
+    inProgress: 0,
+    completedThisMonth: 0,
+    pendingReports: 0,
+  });
+
+  const [upcomingFiscalizations, setUpcomingFiscalizations] = useState<Inspection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [startingInspectionId, setStartingInspectionId] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('inspection_updated', (data) => {
+      console.log('Inspection updated event received:', data);
+
+      if (data.actorId && user?.id && data.actorId === user.id) {
+        console.log('Ignoring self-notification');
+        return;
+      }
+
+      // Refresh data
+      loadDashboardData();
+
+      // Invalidate queries for other components utilizing React Query
+      queryClient.invalidateQueries({
+        queryKey: ['inspections'],
+        refetchType: 'all'
+      });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+
+      toast({
+        title: "Atualização recebida",
+        description: "O RT enviou novas correções para avaliação.",
+      });
+    });
+
+    return () => {
+      socket.off('inspection_updated');
+    };
+  }, [socket, toast, queryClient]);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Carregar todas as inspeções (filtrado por inspector)
+      const inspections = await inspectionsService.getAll({
+        inspectorId: user?.id
+      });
+
+      setUpcomingFiscalizations(inspections);
+
+      // Calcular estatísticas
+      const scheduledCount = inspections.filter(i => i.status === 'SCHEDULED').length;
+      const inProgressCount = inspections.filter(
+        i => i.status === 'IN_PROGRESS_INSPECTOR' || i.status === 'AWAITING_CORRECTION'
+      ).length;
+      const completedCount = inspections.filter(i => i.status === 'COMPLETED').length;
+      const awaitingCount = inspections.filter(i => i.status === 'AWAITING_CORRECTION').length;
+
+      setStats({
+        scheduledFiscalizations: scheduledCount,
+        inProgress: inProgressCount,
+        completedThisMonth: completedCount,
+        pendingReports: awaitingCount,
+      });
+    } catch (err) {
+      console.error('Erro ao carregar dados do dashboard:', err);
+      setError('Não foi possível carregar os dados do dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartInspection = async (inspectionId: string) => {
+    try {
+      setStartingInspectionId(inspectionId);
+
+      // Atualizar status para IN_PROGRESS_INSPECTOR
+      // O backend automaticamente cria os 17 itens fixos (Self-healing)
+      const updatedInspection = await inspectionsService.update(inspectionId, {
+        status: InspectionStatus.IN_PROGRESS_INSPECTOR,
+      });
+
+      // Validar que os itens foram criados
+      if (updatedInspection.checklistItems.length === 0) {
+        throw new Error('Erro ao criar itens do checklist. Tente novamente.');
+      }
+
+      // Navegar para o checklist
+      navigate(`/checklist/${inspectionId}`);
+    } catch (err) {
+      console.error('Erro ao iniciar fiscalização:', err);
+      alert('Não foi possível iniciar a fiscalização. Tente novamente.');
+    } finally {
+      setStartingInspectionId(null);
+    }
+  };
+
+  const getStatusBadge = (status: InspectionStatus) => {
+    const base = styles.cardDescription;
+
+    switch (status) {
+      case 'SCHEDULED':
+        return <span className={`${base} ${styles.infoText}`}>Agendada</span>;
+      case 'IN_PROGRESS_INSPECTOR':
+        return <span className={`${base} ${styles.warningText}`}>Em andamento</span>;
+      case 'AWAITING_CORRECTION':
+        return <span className={`${base} ${styles.warningText}`}>Aguardando RT</span>;
+      case 'COMPLETED':
+        return <span className={`${base} ${styles.successText}`}>Concluída</span>;
+      default:
+        return <span className={base}>Indefinido</span>;
+    }
+  };
+
+  const hasNotification = (inspection: Inspection): boolean => {
+    // Mostrar notificação se há itens aguardando análise
+    return inspection.status === 'AWAITING_CORRECTION' &&
+      (inspection.checklistItems?.some(item => item.status === 'AWAITING_ANALYSIS') ?? false);
+  };
+
+  const getNotificationMessage = (inspection: Inspection): string => {
+    const awaitingCount = inspection.checklistItems?.filter(
+      item => item.status === 'AWAITING_ANALYSIS'
+    ).length ?? 0;
+
+    return awaitingCount > 0
+      ? `RT enviou ${awaitingCount} ${awaitingCount === 1 ? 'item' : 'itens'} para análise`
+      : '';
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.dashboardContainer}>
+        <Header userType="inspector" userName="Carregando..." />
+        <div className={styles.pageContainer}>
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>Carregando...</h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.dashboardContainer}>
+        <Header userType="inspector" userName="Fiscal" />
+        <div className={styles.pageContainer}>
+          <div className={styles.pageHeader}>
+            <h1 className={styles.pageTitle}>Erro</h1>
+            <p className={styles.pageDescription}>{error}</p>
+          </div>
+          <button
+            type="button"
+            className={`${styles.button} ${styles.primaryButton}`}
+            onClick={loadDashboardData}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.dashboardContainer}>
+      {/* Report Modal */}
+      {selectedInspection && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setSelectedInspection(null);
+          }}
+          inspection={selectedInspection}
+        />
+      )}
+
+      <Header userType="inspector" userName={user?.name || "Fiscal"} />
+
+      <div className={styles.pageContainer}>
+        {/* Cabeçalho */}
+        <div className={styles.pageHeader}>
+          <div>
+            <h1 className={styles.pageTitle}>Dashboard do Fiscal</h1>
+            <p className={styles.pageDescription}>
+              Gerencie suas fiscalizações e relatórios
+            </p>
+          </div>
+
+          <div className={styles.headerActions}>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.primaryButton}`}
+              onClick={() => navigate("/fiscal/schedule")}
+            >
+              <Calendar className={styles.buttonIcon} />
+              Agendar Fiscalização
+            </button>
+          </div>
+        </div>
+
+        {/* Cards de estatísticas */}
+        <div className={styles.statsGrid}>
+          <div className={`${styles.card} ${styles.infoBorder}`}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Agendadas</h3>
+              <Calendar className={`${styles.cardIcon} ${styles.infoText}`} />
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardValue}>{stats.scheduledFiscalizations}</div>
+              <p className={styles.cardDescription}>Próximas fiscalizações</p>
+            </div>
+          </div>
+
+          <div className={`${styles.card} ${styles.warningBorder}`}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Em Andamento</h3>
+              <Clock className={`${styles.cardIcon} ${styles.warningText}`} />
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardValue}>{stats.inProgress}</div>
+              <p className={styles.cardDescription}>Fiscalizações ativas</p>
+            </div>
+          </div>
+
+          <div className={`${styles.card} ${styles.successBorder}`}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Concluídas</h3>
+              <CheckSquare className={`${styles.cardIcon} ${styles.successText}`} />
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardValue}>{stats.completedThisMonth}</div>
+              <p className={styles.cardDescription}>Este mês</p>
+            </div>
+          </div>
+
+          <div className={`${styles.card} ${styles.warningBorder}`}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Pendentes</h3>
+              <AlertTriangle className={`${styles.cardIcon} ${styles.warningText}`} />
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardValue}>{stats.pendingReports}</div>
+              <p className={styles.cardDescription}>Relatórios pendentes</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Próximas Fiscalizações + Ações rápidas */}
+        <div className={styles.contentGrid}>
+          {/* Lista de próximas fiscalizações */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.quickActionsTitle}>Próximas Fiscalizações</h3>
+              <p className={styles.cardDescription}>
+                Suas fiscalizações agendadas e em andamento
+              </p>
+            </div>
+
+            <div className={styles.cardContent}>
+              <div className={styles.quickActionsContent}>
+                {upcomingFiscalizations.length === 0 ? (
+                  <p className={styles.cardDescription}>Nenhuma fiscalização encontrada</p>
+                ) : (
+                  upcomingFiscalizations.map((inspection) => (
+                    <div
+                      key={inspection.id}
+                      className={styles.actionButton}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            marginBottom: "0.25rem",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <div className={styles.actionTitle}>
+                              {inspection.institution?.name || 'Instituição não informada'}
+                            </div>
+                            {hasNotification(inspection) && (
+                              <span className={styles.notificationBadge}>
+                                <Bell />
+                                Nova atualização
+                              </span>
+                            )}
+                          </div>
+                          {getStatusBadge(inspection.status)}
+                        </div>
+
+                        {hasNotification(inspection) && (
+                          <div style={{
+                            backgroundColor: "rgba(239, 68, 68, 0.05)",
+                            border: "1px solid rgba(239, 68, 68, 0.2)",
+                            borderRadius: "0.375rem",
+                            padding: "0.5rem 0.75rem",
+                            marginBottom: "0.5rem",
+                            fontSize: "0.875rem",
+                            color: "#ef4444",
+                          }}>
+                            {getNotificationMessage(inspection)}
+                          </div>
+                        )}
+
+                        <div className={styles.cardDescription}>
+                          RT: {inspection.responsibleTechnician?.user.name || 'Não atribuído'}
+                        </div>
+
+                        <div
+                          className={styles.cardDescription}
+                          style={{ display: "flex", gap: "1rem", marginTop: "0.35rem" }}
+                        >
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <Calendar className={styles.cardIcon} />
+                            {new Date(inspection.date).toLocaleDateString("pt-BR")}
+                          </span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <MapPin className={styles.cardIcon} />
+                            {inspection.institution?.address || 'Endereço não informado'}
+                          </span>
+                        </div>
+
+                        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+                          <button
+                            type="button"
+                            className={`${styles.button} ${styles.primaryButton}`}
+                            onClick={() => {
+                              if (inspection.status === InspectionStatus.COMPLETED) {
+                                setSelectedInspection(inspection);
+                                setShowReportModal(true);
+                              } else if ([InspectionStatus.SCHEDULED, InspectionStatus.IN_PROGRESS_INSPECTOR].includes(inspection.status)) {
+                                handleStartInspection(inspection.id);
+                              } else if (inspection.status === InspectionStatus.AWAITING_CORRECTION) {
+                                navigate(`/checklist/${inspection.id}`);
+                              }
+                            }}
+                            disabled={startingInspectionId === inspection.id}
+                          >
+                            {startingInspectionId === inspection.id
+                              ? "Iniciando..."
+                              : inspection.status === 'COMPLETED'
+                                ? "Ver Relatório"
+                                : inspection.status === 'AWAITING_CORRECTION'
+                                  ? "Acompanhar Fiscalização"
+                                  : inspection.status === 'IN_PROGRESS_INSPECTOR'
+                                    ? "Continuar Checklist"
+                                    : "Iniciar Fiscalização"}
+                          </button>
+
+                          {inspection.status === 'SCHEDULED' && (
+                            <button
+                              type="button"
+                              className={`${styles.button} ${styles.secondaryButton}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/fiscal/schedule/${inspection.id}`);
+                              }}
+                            >
+                              Editar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Ações rápidas */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.quickActionsTitle}>Acesso Rápido</h3>
+              <p className={styles.cardDescription}>
+                Ferramentas de apoio ao fiscal
+              </p>
+            </div>
+
+            <div className={styles.quickActionsContent}>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/fiscal/schedule")}
+              >
+                <Calendar className={`${styles.actionIcon} ${styles.infoText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Agendar Nova Fiscalização</div>
+                  <div className={styles.actionDescription}>Criar novo agendamento</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/dashboard/standard-checklist")}
+              >
+                <CheckSquare className={`${styles.actionIcon} ${styles.successText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Checklist Padrão</div>
+                  <div className={styles.actionDescription}>
+                    Visualizar itens de verificação
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* /grid */}
+      </div>
+    </div>
+  );
+};
+
+export default FiscalDashboard;

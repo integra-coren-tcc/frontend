@@ -1,0 +1,688 @@
+:root {
+  --info-color: #3b82f6;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --white: #ffffff;
+}
+
+.checklistContainer {
+  min-height: 100vh;
+  background-color: var(--gray-50);
+  color: var(--gray-900);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+.pageContainer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* --- Header --- */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.headerContent h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.headerContent p {
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+.realTimeIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.realTimeDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--success-color);
+  border-radius: 50%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.realTimeText {
+  font-size: 0.875rem;
+  color: var(--success-color);
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* --- Buttons --- */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.buttonPrimary {
+  background-color: var(--info-color);
+  color: var(--white);
+}
+
+.buttonPrimary:hover {
+  background-color: #2563eb;
+}
+
+.buttonSuccess {
+  background-color: var(--success-color);
+  color: var(--white);
+}
+
+.buttonSuccess:hover {
+  background-color: #16a34a;
+}
+
+.buttonDanger {
+  background-color: var(--danger-color);
+  color: var(--white);
+}
+
+.buttonDanger:hover {
+  background-color: #dc2626;
+}
+
+.buttonOutline {
+  background-color: var(--white);
+  color: var(--gray-700);
+  border-color: var(--gray-300);
+}
+
+.buttonOutline:hover {
+  background-color: var(--gray-50);
+}
+
+.buttonSmall {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.buttonIcon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+}
+
+/* --- Card --- */
+.card {
+  background-color: var(--white);
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-200);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.cardHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.cardHeaderWithProgress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.cardDescription {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+.cardContent {
+  padding: 1.5rem;
+}
+
+.progressStats {
+  text-align: right;
+}
+
+.progressValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.progressLabel {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* --- Progress Bar --- */
+.progressBar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: var(--gray-300);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--info-color);
+  transition: width 0.3s ease;
+}
+
+/* --- Stats Grid --- */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.statCard {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.statCardSuccess {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.statCardDanger {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.statCardMuted {
+  background-color: var(--gray-100);
+}
+
+.statValue {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.statValueSuccess {
+  color: var(--success-color);
+}
+
+.statValueDanger {
+  color: var(--danger-color);
+}
+
+.statValueMuted {
+  color: var(--gray-500);
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+/* --- Tabs --- */
+.tabs {
+  margin-top: 1rem;
+}
+
+.tabsList {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background-color: var(--gray-100);
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tabsTrigger {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabsTrigger:hover {
+  background-color: var(--white);
+}
+
+.tabsTriggerActive {
+  background-color: var(--white);
+  color: var(--gray-900);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.tabsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* --- Checklist Item Card --- */
+.checklistCard {
+  background-color: var(--white);
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--info-color);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.checklistHeader {
+  padding: 1rem 1.5rem 0.75rem 1.5rem;
+}
+
+.checklistHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.checklistHeaderLeft {
+  flex: 1;
+}
+
+.priorityIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.priorityIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.priorityHigh {
+  color: var(--danger-color);
+}
+
+.priorityMedium {
+  color: var(--warning-color);
+}
+
+.priorityLow {
+  color: var(--gray-500);
+}
+
+.priorityText {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+.itemTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.checklistContent {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+/* --- Badge --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badgeSuccess {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: var(--success-color);
+}
+
+.badgeDanger {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+}
+
+.badgeSecondary {
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.badgeOutline {
+  background-color: transparent;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+/* --- Observation Section --- */
+.observationSection {
+  margin-bottom: 1rem;
+}
+
+.observationHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.observationIcon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--gray-500);
+}
+
+.observationIconRT {
+  color: var(--info-color);
+}
+
+.observationLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-900);
+}
+
+.observationDisplay {
+  padding: 0.75rem;
+  background-color: var(--gray-100);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--info-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* --- Photo Indicators --- */
+.photoIndicator {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background-color: var(--gray-100);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.photoIndicatorRT {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--info-color);
+}
+
+/* --- Completion Card --- */
+.completionCard {
+  margin-top: 1.5rem;
+  background: linear-gradient(to right, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 0.5rem;
+}
+
+.completionCardRT {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.completionContent {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.completionIcon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+}
+
+.completionIconSuccess {
+  color: var(--success-color);
+}
+
+.completionIconPrimary {
+  color: var(--info-color);
+}
+
+.completionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--gray-900);
+}
+
+.completionDescription {
+  color: var(--gray-500);
+  margin-bottom: 1rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .headerActions .button {
+    flex: 1;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tabsList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .actionButtons .button {
+    width: 100%;
+  }
+
+  /* No seu Checklist.module.css */
+
+  /* Container para os indicadores de Prioridade e Prazo.
+  Isso os colocará lado a lado.
+*/
+  .itemMetadata {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    /* Permite quebrar a linha em telas pequenas */
+    gap: 1rem;
+    /* 16px de espaço entre Prioridade e Prazo */
+    margin-bottom: 0.5rem;
+    /* 8px de espaço antes do título do item */
+  }
+
+  /* Estilo para o indicador de Prioridade (provavelmente já existe, 
+  mas garanta que tenha display: flex) 
+*/
+  .priorityIndicator {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    /* 6px */
+  }
+
+  /* Estilo para o novo indicador de Prazo 
+*/
+  .prazoIndicator {
+    display: flex;
+    /* <-- ISSO COLOCA O ÍCONE E O TEXTO LADO A LADO */
+    align-items: center;
+    /* <-- Isso alinha eles verticalmente no centro */
+    gap: 0.375rem;
+    /* 6px de espaço entre o ícone e o texto */
+    font-size: 0.875rem;
+    /* 14px */
+    color: #52525b;
+    /* Um cinza (ou a cor que preferir) */
+  }
+
+  .prazoIcon {
+    display: flex;
+    flex-direction: column;
+    color: inherit;
+  }
+
+  .prazoText {
+    display: flex;
+    flex-direction: column;
+    color: inherit;
+  }
+
+  /* Ajuste no container da esquerda para garantir 
+  que os metadados e o título fiquem empilhados
+*/
+  .checklistHeaderLeft {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Remove o 'gap' se houver, pois .itemMetadata já tem margin-bottom */
+  }
+
+}
+
+/* --- Modal --- */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  /* Ensure it's on top of everything */
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+  background-color: var(--white);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.modalDescription {
+  color: var(--gray-500);
+  margin-bottom: 1.5rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
