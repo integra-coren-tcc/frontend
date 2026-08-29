@@ -6,6 +6,39 @@ import type {
 
 const BASE_PATH = '/checklist-items'
 
+export interface ChecklistItemHistoryEntry {
+    id: string
+    type: 'comment' | 'status_change' | 'creation'
+    user: {
+        publicId: string
+        name: string
+        role: string
+    }
+    description: string
+    details?: string | null
+    timestamp: string
+}
+
+export interface CreateChecklistCommentResponse {
+    id: string
+    text: string
+    isInternalNote: boolean
+    user: {
+        id: number
+        name: string
+        role: string
+    }
+    files: Array<{
+        originalName?: string
+        fileName?: string
+        mimeType?: string
+        size?: number
+        path?: string
+        url?: string
+    }>
+    timestamp: string
+}
+
 export const checklistItemsService = {
     /**
      * Atualiza o status de um item do checklist
@@ -22,9 +55,9 @@ export const checklistItemsService = {
     /**
      * Obtém o histórico de um item do checklist
      */
-    async getHistory(itemCode: string): Promise<any[]> {
+    async getHistory(itemCode: string): Promise<ChecklistItemHistoryEntry[]> {
         const response = await axiosPrivate.get(`${BASE_PATH}/${itemCode}/history`)
-        return response.data.history || []
+        return response.data.data || []
     },
 
     /**
@@ -34,10 +67,12 @@ export const checklistItemsService = {
         inspectionId: string,
         itemCode: string,
         text: string,
-        files?: File[]
-    ): Promise<any> {
+        files?: File[],
+        isInternalNote?: boolean
+    ): Promise<CreateChecklistCommentResponse> {
         const formData = new FormData()
         formData.append('text', text)
+        formData.append('isInternalNote', isInternalNote ? 'true' : 'false')
 
         if (files && files.length > 0) {
             console.log('🔵 Frontend: Appending files to FormData:', files.length)

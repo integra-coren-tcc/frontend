@@ -22,7 +22,7 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       id: '1',
       name: 'João Silva',
       email: 'fiscal@integracoren.com',
-      role: 'FISCAL',
+      role: 'INSPECTOR',
       region: 'Norte',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

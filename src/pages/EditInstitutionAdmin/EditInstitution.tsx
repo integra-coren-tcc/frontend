@@ -47,7 +47,7 @@ const EditInstitution: React.FC = () => {
       const institution = await institutionsService.getById(institutionId);
 
       // Parse address if possible: "Address, Neighborhood, City - State, Zip"
-      let parsedAddress = {
+      const parsedAddress = {
         address: institution.address || "",
         neighborhood: "",
         city: "",
@@ -131,7 +131,7 @@ const EditInstitution: React.FC = () => {
       await institutionsService.update(id, {
         name: formData.name,
         address: fullAddress,
-        type: formData.type as any,
+        type: formData.type,
         capacity: Number(formData.capacity) || undefined
       });
 

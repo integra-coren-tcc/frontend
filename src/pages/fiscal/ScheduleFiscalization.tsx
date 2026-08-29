@@ -47,18 +47,6 @@ const ScheduleFiscalization = () => {
     console.log('--- DIAGNOSTIC END ---');
   }, [user]);
 
-  // Role Validation
-  if (user?.role !== 'INSPECTOR') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <AlertCircle className="w-16 h-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Acesso Negado</h1>
-        <p className="text-muted-foreground">Apenas fiscais podem agendar fiscalizações.</p>
-        <Button className="mt-4" onClick={() => navigate('/dashboard')}>Voltar</Button>
-      </div>
-    );
-  }
-
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
 
@@ -87,6 +75,18 @@ const ScheduleFiscalization = () => {
 
   const selectedInstitution = institutions.find(i => i.id === formData.institutionId);
 
+  // Role Validation (after all hooks have been called, per Rules of Hooks)
+  if (user?.role !== 'INSPECTOR') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <AlertCircle className="w-16 h-16 text-destructive mb-4" />
+        <h1 className="text-2xl font-bold">Acesso Negado</h1>
+        <p className="text-muted-foreground">Apenas fiscais podem agendar fiscalizações.</p>
+        <Button className="mt-4" onClick={() => navigate('/dashboard')}>Voltar</Button>
+      </div>
+    );
+  }
+
   const timeSlots = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
     "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
@@ -109,7 +109,7 @@ const ScheduleFiscalization = () => {
   };
 
   const handleSchedule = () => {
-    if (!date || !formData.institutionId || !formData.time || !formData.rtId || !user?.inspectorPublicId) {
+    if (!date || !formData.institutionId || !formData.time || !user?.inspectorPublicId) {
       if (!user?.inspectorPublicId) {
         toast.error("Erro: Identificador de fiscal não encontrado. Faça login novamente.");
       }
@@ -124,7 +124,7 @@ const ScheduleFiscalization = () => {
     createInspectionMutation.mutate({
       institutionPublicId: formData.institutionId,
       // inspectorPublicId: user.inspectorPublicId!, // Handled by backend via JWT token
-      responsibleTechnicianPublicId: formData.rtId,
+      responsibleTechnicianPublicId: formData.rtId || undefined,
       date: scheduledDate.toISOString(),
       priority: formData.priority,
       observations: formData.observations,
@@ -204,9 +204,9 @@ const ScheduleFiscalization = () => {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm flex items-center gap-2">
+                    <div className="p-3 bg-muted border border-border rounded-md text-muted-foreground text-sm flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" />
-                      <span>Esta instituição não possui RT vinculado. Não é possível agendar.</span>
+                      <span>Esta instituição não possui RT cadastrado. Você poderá informar o responsável técnico ao iniciar a fiscalização.</span>
                     </div>
                   )}
                 </div>
@@ -299,7 +299,6 @@ const ScheduleFiscalization = () => {
                   !formData.institutionId ||
                   !date ||
                   !formData.time ||
-                  !formData.rtId ||
                   createInspectionMutation.isPending
                 }
               >
@@ -338,7 +337,10 @@ const ScheduleFiscalization = () => {
                         <User className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">RT:</span>
                         <span>
-                          {selectedInstitution?.rts?.find(rt => rt.id === formData.rtId)?.name || "Selecione..."}
+                          {selectedInstitution?.rts?.find(rt => rt.id === formData.rtId)?.name
+                            || (selectedInstitution?.rts && selectedInstitution.rts.length > 0
+                              ? "Não selecionado"
+                              : "Não vinculado — a informar ao iniciar a fiscalização")}
                         </span>
                       </div>
 
@@ -381,10 +383,9 @@ const ScheduleFiscalization = () => {
                   <div className="p-4 bg-success/5 border border-success/20 rounded-lg">
                     <h4 className="font-medium text-success mb-2">O que acontece após confirmar?</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• O RT será notificado automaticamente</li>
                       <li>• A fiscalização aparecerá no seu dashboard</li>
                       <li>• Um checklist será criado para a fiscalização</li>
-                      <li>• Lembretes serão enviados próximo à data</li>
+                      <li>• O RT será notificado quando você enviar o checklist preenchido</li>
                     </ul>
                   </div>
                 </div>

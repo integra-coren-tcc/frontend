@@ -9,7 +9,7 @@ export interface RT {
     crm: string
     user: User
     userId: number
-    institutionId: number
+    institutionId: string
     institution?: Institution
 }
 

@@ -66,6 +66,8 @@ export interface Inspection {
     institution?: Institution
     inspector?: Inspector
     responsibleTechnician?: ResponsibleTechnician
+    manualRtName?: string | null
+    manualRtCrm?: string | null
     checklistItems: ChecklistItem[]
 }
 
@@ -76,7 +78,7 @@ export interface CreateInspectionRequest {
     priority: Priority
     institutionPublicId: string
     inspectorPublicId?: string
-    responsibleTechnicianPublicId: string
+    responsibleTechnicianPublicId?: string
 }
 
 export interface UpdateInspectionRequest {
@@ -86,6 +88,8 @@ export interface UpdateInspectionRequest {
     status?: InspectionStatus
     startedAt?: string
     completedAt?: string
+    manualRtName?: string
+    manualRtCrm?: string
 }
 
 // Tipos para responses
@@ -95,6 +99,25 @@ export interface InspectionStats {
     inProgress: number
     awaitingCorrection: number
     completed: number
+}
+
+export interface PendingByInstitutionGroup {
+    institution: {
+        publicId: string
+        name: string
+    }
+    nearDeadlineCount: number
+    inspections: Array<{
+        id: string
+        date: string
+        status: InspectionStatus
+        priority: Priority
+        nearDeadlineItems: Array<{
+            itemCode: string
+            notification: string
+            deadline: string
+        }>
+    }>
 }
 
 export interface DashboardData {

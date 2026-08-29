@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import jsPDF from "jspdf";
 import InteractionHistory from "@/components/InteractionHistory/InteractionHistory";
+import InternalNotePanel from "@/components/checklist/InternalNotePanel";
+import { getErrorMessage } from "@/lib/getErrorMessage";
 import Header from "@/components/layout/Header";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./Checklist.module.css";
@@ -51,6 +53,7 @@ const ChecklistRT: React.FC = () => {
   // Modal states
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -128,9 +131,9 @@ const ChecklistRT: React.FC = () => {
       // Show Success Modal
       setShowSuccessModal(true);
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Erro ao enviar evidência:", err);
-      // Show Error Modal
+      setErrorMessage(getErrorMessage(err, "") || null);
       setShowErrorModal(true);
     } finally {
       setSubmitting(prev => ({ ...prev, [item.publicId]: false }));
@@ -314,12 +317,12 @@ const ChecklistRT: React.FC = () => {
             <XCircle className={styles.modalIcon} style={{ color: '#ef4444' }} />
             <h2 className={styles.modalTitle}>Erro no Envio</h2>
             <p className={styles.modalDescription}>
-              Não foi possível enviar a evidência. Tente novamente.
+              {errorMessage ?? "Não foi possível enviar a evidência. Tente novamente."}
             </p>
             <div className={styles.modalActions}>
               <button
                 className={`${styles.button} ${styles.buttonOutline}`}
-                onClick={() => setShowErrorModal(false)}
+                onClick={() => { setShowErrorModal(false); setErrorMessage(null); }}
               >
                 Fechar
               </button>
@@ -412,9 +415,18 @@ const ChecklistRT: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Interaction History */}
-                  {item.comments && item.comments.length > 0 && (
-                    <InteractionHistory comments={item.comments} />
+                  {/* Interaction History (internal notes excluded — they have their own panel) */}
+                  {item.comments && item.comments.filter((c) => !c.isInternalNote).length > 0 && (
+                    <InteractionHistory comments={item.comments.filter((c) => !c.isInternalNote)} />
+                  )}
+
+                  {/* Internal Notes (informal, not part of the report) */}
+                  {inspection?.id && (
+                    <InternalNotePanel
+                      inspectionId={inspection.id}
+                      item={item}
+                      onSent={loadInspectionData}
+                    />
                   )}
 
                   {/* Countdown for Pending Items */}

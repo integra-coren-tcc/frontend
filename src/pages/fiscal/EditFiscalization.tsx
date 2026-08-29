@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Calendar, MapPin, User, Clock } from "lucide-react";
+import { ArrowLeft, Save, Calendar as CalendarIcon, MapPin, User, Clock, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -12,118 +14,109 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import Header from "@/components/layout/Header";
 import { useNavigate, useParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useUserStore } from "@/stores/userStore";
+import { inspectionsService } from "@/services/inspectionsService";
+import { Inspection, InspectionStatus, Priority } from "@/@types/Inspection";
+import { getErrorMessage } from "@/lib/getErrorMessage";
+
+const timeSlots = [
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+  "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
+  "15:00", "15:30", "16:00", "16:30", "17:00"
+];
 
 const EditFiscalization = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { toast } = useToast();
   const { user } = useUserStore();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [inspection, setInspection] = useState<Inspection | null>(null);
+
+  const [date, setDate] = useState<Date>();
   const [formData, setFormData] = useState({
-    institution: "",
-    date: "",
     time: "",
-    estimatedDuration: "2",
-    priority: "normal",
-    type: "routine",
+    priority: Priority.MEDIUM,
     observations: "",
-    rtName: "",
-    rtPhone: "",
-    rtEmail: "",
-    address: "",
-    neighborhood: "",
-    city: "",
+    manualRtName: "",
+    manualRtCrm: "",
   });
 
-  // Mock institutions data
-  const institutions = [
-    { id: "1", name: "UBS Vila Nova", rt: "Dr. Carlos Silva", address: "Rua das Flores, 123" },
-    { id: "2", name: "UBS Centro", rt: "Dra. Maria Santos", address: "Av. Principal, 456" },
-    { id: "3", name: "UBS Jardim América", rt: "Dr. João Oliveira", address: "Rua do Hospital, 789" },
-  ];
-
-  // Simulate loading existing data
   useEffect(() => {
+    if (!id) return;
+
     const loadFiscalizationData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoadingData(true);
+        setLoadError(null);
 
-        // Mock data - in real app, this would come from API
+        const data = await inspectionsService.getById(id);
+        setInspection(data);
+
+        const scheduledDate = new Date(data.date);
+        setDate(scheduledDate);
+
         setFormData({
-          institution: "1",
-          date: "2024-01-25",
-          time: "09:00",
-          estimatedDuration: "2",
-          priority: "normal",
-          type: "routine",
-          observations: "Fiscalização de rotina agendada. Verificar conformidade geral da unidade.",
-          rtName: "Dr. Carlos Silva",
-          rtPhone: "(11) 99999-9999",
-          rtEmail: "carlos.silva@saude.sp.gov.br",
-          address: "Rua das Flores, 123",
-          neighborhood: "Vila Nova",
-          city: "São Paulo",
+          time: format(scheduledDate, "HH:mm"),
+          priority: data.priority,
+          observations: data.observations || "",
+          manualRtName: data.manualRtName || "",
+          manualRtCrm: data.manualRtCrm || "",
         });
       } catch (error) {
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os dados da fiscalização.",
-          variant: "destructive",
-        });
+        console.error("Erro ao carregar fiscalização:", error);
+        setLoadError("Não foi possível carregar os dados da fiscalização.");
       } finally {
         setIsLoadingData(false);
       }
     };
 
     loadFiscalizationData();
-  }, [id, toast]);
+  }, [id]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Auto-fill RT data when institution changes
-    if (field === "institution") {
-      const selectedInstitution = institutions.find(inst => inst.id === value);
-      if (selectedInstitution) {
-        setFormData(prev => ({
-          ...prev,
-          rtName: selectedInstitution.rt,
-          address: selectedInstitution.address,
-        }));
-      }
-    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const hasRealRt = !!inspection?.responsibleTechnician;
+  const canEdit = inspection?.status === InspectionStatus.SCHEDULED;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (!id || !date) return;
 
+    const [hours, minutes] = formData.time.split(":").map(Number);
+    const scheduledDate = new Date(date);
+    scheduledDate.setHours(hours, minutes, 0, 0);
+
+    setIsSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      toast({
-        title: "Fiscalização atualizada com sucesso!",
-        description: "As alterações foram salvas.",
+      await inspectionsService.update(id, {
+        date: scheduledDate.toISOString(),
+        priority: formData.priority,
+        observations: formData.observations,
+        ...(hasRealRt
+          ? {}
+          : {
+            manualRtName: formData.manualRtName || undefined,
+            manualRtCrm: formData.manualRtCrm || undefined,
+          }),
       });
 
+      toast.success("Fiscalização atualizada com sucesso!");
       navigate("/dashboard/fiscal");
-    } catch (error) {
-      toast({
-        title: "Erro ao atualizar fiscalização",
-        description: "Tente novamente mais tarde.",
-        variant: "destructive",
-      });
+    } catch (error: unknown) {
+      console.error("Erro ao atualizar fiscalização:", error);
+      toast.error(getErrorMessage(error, "Não foi possível atualizar a fiscalização."));
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -133,7 +126,39 @@ const EditFiscalization = () => {
         <Header userType="inspector" userName={user?.name || "Fiscal"} />
         <div className="container mx-auto px-6 py-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-muted-foreground">Carregando dados da fiscalização...</div>
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !inspection) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header userType="inspector" userName={user?.name || "Fiscal"} />
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <AlertCircle className="w-10 h-10 text-destructive" />
+            <p className="text-muted-foreground">{loadError || "Fiscalização não encontrada."}</p>
+            <Button variant="outline" onClick={() => navigate("/dashboard/fiscal")}>Voltar</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canEdit) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header userType="inspector" userName={user?.name || "Fiscal"} />
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <AlertCircle className="w-10 h-10 text-muted-foreground" />
+            <p className="text-muted-foreground">
+              Esta fiscalização já está em andamento ou foi concluída e não pode mais ser editada.
+            </p>
+            <Button variant="outline" onClick={() => navigate("/dashboard/fiscal")}>Voltar</Button>
           </div>
         </div>
       </div>
@@ -163,58 +188,22 @@ const EditFiscalization = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Institution and Basic Info */}
+          {/* Institution (read-only) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="w-5 h-5" />
-                Instituição e Localização
+                Instituição
               </CardTitle>
               <CardDescription>
-                Selecione a instituição a ser fiscalizada
+                A instituição não pode ser alterada após o agendamento
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="institution">Instituição *</Label>
-                <Select
-                  value={formData.institution}
-                  onValueChange={(value) => handleInputChange("institution", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a instituição" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {institutions.map((institution) => (
-                      <SelectItem key={institution.id} value={institution.id}>
-                        {institution.name} - {institution.rt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="address">Endereço</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
-                    placeholder="Endereço da instituição"
-                    disabled
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Bairro</Label>
-                  <Input
-                    id="neighborhood"
-                    value={formData.neighborhood}
-                    onChange={(e) => handleInputChange("neighborhood", e.target.value)}
-                    placeholder="Bairro"
-                  />
-                </div>
-              </div>
+            <CardContent className="space-y-2">
+              <Input value={inspection.institution?.name || ""} disabled />
+              {inspection.institution?.address && (
+                <Input value={inspection.institution.address} disabled />
+              )}
             </CardContent>
           </Card>
 
@@ -222,7 +211,7 @@ const EditFiscalization = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
+                <CalendarIcon className="w-5 h-5" />
                 Data e Horário
               </CardTitle>
               <CardDescription>
@@ -230,44 +219,45 @@ const EditFiscalization = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="date">Data *</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleInputChange("date", e.target.value)}
-                    required
-                  />
+                  <Label>Data *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${!date && "text-muted-foreground"}`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP", { locale: ptBR }) : "Selecione a data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="time">Horário *</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={formData.time}
-                    onChange={(e) => handleInputChange("time", e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="estimatedDuration">Duração Estimada</Label>
-                  <Select
-                    value={formData.estimatedDuration}
-                    onValueChange={(value) => handleInputChange("estimatedDuration", value)}
-                  >
+                  <Select value={formData.time} onValueChange={(value) => handleInputChange("time", value)}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione o horário" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 hora</SelectItem>
-                      <SelectItem value="1.5">1h 30min</SelectItem>
-                      <SelectItem value="2">2 horas</SelectItem>
-                      <SelectItem value="2.5">2h 30min</SelectItem>
-                      <SelectItem value="3">3 horas</SelectItem>
-                      <SelectItem value="3.5">3h 30min</SelectItem>
-                      <SelectItem value="4">4 horas</SelectItem>
+                      {timeSlots.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            {time}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -275,53 +265,31 @@ const EditFiscalization = () => {
             </CardContent>
           </Card>
 
-          {/* Fiscalization Details */}
+          {/* Priority and observations */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 Detalhes da Fiscalização
               </CardTitle>
-              <CardDescription>
-                Configure o tipo e prioridade da fiscalização
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo de Fiscalização</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => handleInputChange("type", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="routine">Rotina</SelectItem>
-                      <SelectItem value="complaint">Por Denúncia</SelectItem>
-                      <SelectItem value="follow-up">Acompanhamento</SelectItem>
-                      <SelectItem value="urgent">Urgente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Prioridade</Label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value) => handleInputChange("priority", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Baixa</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="urgent">Urgente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="priority">Prioridade</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value: Priority) => handleInputChange("priority", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={Priority.CRITICAL}>Crítica - Imediata</SelectItem>
+                    <SelectItem value={Priority.HIGH}>Alta - Urgente</SelectItem>
+                    <SelectItem value={Priority.MEDIUM}>Média - Normal</SelectItem>
+                    <SelectItem value={Priority.LOW}>Baixa - Rotina</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -345,41 +313,39 @@ const EditFiscalization = () => {
                 Responsável Técnico
               </CardTitle>
               <CardDescription>
-                Dados de contato do responsável técnico da instituição
+                {hasRealRt
+                  ? "RT vinculado à instituição"
+                  : "Esta instituição não possui RT cadastrado. Você pode informar os dados aqui ou ao iniciar a fiscalização."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="rtName">Nome do RT</Label>
-                <Input
-                  id="rtName"
-                  value={formData.rtName}
-                  onChange={(e) => handleInputChange("rtName", e.target.value)}
-                  placeholder="Nome do responsável técnico"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {hasRealRt ? (
                 <div className="space-y-2">
-                  <Label htmlFor="rtPhone">Telefone do RT</Label>
-                  <Input
-                    id="rtPhone"
-                    value={formData.rtPhone}
-                    onChange={(e) => handleInputChange("rtPhone", e.target.value)}
-                    placeholder="(11) 99999-9999"
-                  />
+                  <Input value={inspection.responsibleTechnician?.user.name || ""} disabled />
+                  <Input value={inspection.responsibleTechnician?.crm || ""} disabled />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rtEmail">Email do RT</Label>
-                  <Input
-                    id="rtEmail"
-                    type="email"
-                    value={formData.rtEmail}
-                    onChange={(e) => handleInputChange("rtEmail", e.target.value)}
-                    placeholder="rt@instituicao.com.br"
-                  />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="manualRtName">Nome do RT</Label>
+                    <Input
+                      id="manualRtName"
+                      value={formData.manualRtName}
+                      onChange={(e) => handleInputChange("manualRtName", e.target.value)}
+                      placeholder="Nome do responsável técnico"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="manualRtCrm">COREN</Label>
+                    <Input
+                      id="manualRtCrm"
+                      value={formData.manualRtCrm}
+                      onChange={(e) => handleInputChange("manualRtCrm", e.target.value)}
+                      placeholder="Número de registro no COREN"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -394,10 +360,10 @@ const EditFiscalization = () => {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isSaving || !date || !formData.time}
               className="bg-gradient-to-r from-primary to-primary-dark"
             >
-              {isLoading ? (
+              {isSaving ? (
                 <>Salvando...</>
               ) : (
                 <>

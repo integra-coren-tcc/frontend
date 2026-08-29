@@ -5,6 +5,7 @@ import type {
     UpdateInspectionRequest,
     DashboardData,
     InspectionStats,
+    PendingByInstitutionGroup,
 } from '@/@types/Inspection'
 
 const BASE_PATH = '/inspections'
@@ -16,6 +17,14 @@ export const inspectionsService = {
     async getAll(params?: { inspectorId?: string; institutionId?: string; status?: string }): Promise<Inspection[]> {
         const response = await axiosPrivate.get(BASE_PATH, { params })
         return response.data.data || []
+    },
+
+    /**
+     * Pendências do fiscal autenticado, agrupadas por instituição
+     */
+    async getPendingByInstitution(): Promise<PendingByInstitutionGroup[]> {
+        const response = await axiosPrivate.get(`${BASE_PATH}/pending-by-institution`)
+        return response.data.groups || []
     },
 
     /**

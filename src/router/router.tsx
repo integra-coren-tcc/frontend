@@ -7,6 +7,8 @@ import Login from '../pages/Login/Login'
 import AdminDashboard from '../pages/AdminDashboard/AdminDashboard'
 import FiscalDashboard from '../pages/FiscalDashboard/FiscalDashboard'
 import RTDashboard from '../pages/RTDashboard/RTDashboard'
+import InspectionHistory from '../pages/rt/InspectionHistory'
+import InspectionHistoryDetail from '../pages/rt/InspectionHistoryDetail'
 import Profile from '../pages/Profile/Profile'
 import InstitutionManagement from '../pages/InstitutionManagementAdmin/InstitutionManagement'
 import FiscalManagement from '../pages/FiscalManagementAdmin/FiscalManagement'
@@ -16,6 +18,8 @@ import EditInstitution from '../pages/EditInstitutionAdmin/EditInstitution'
 import NewFiscal from '../pages/NewFiscalAdmin/NewFiscal'
 import NewRT from '../pages/NewRTAdmin/NewRT'
 import ScheduleFiscalization from '../pages/fiscal/ScheduleFiscalization'
+import PendingByInstitution from '../pages/fiscal/PendingByInstitution'
+import Goals from '../pages/fiscal/Goals'
 import EditFiscalization from '../pages/fiscal/EditFiscalization'
 import Checklist from '../pages/ChecklistFiscal/ChecklistFiscal'
 import ChecklistRT from '../pages/ChecklistRT/ChecklistRT'
@@ -141,6 +145,22 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'dashboard/fiscal/pendencias',
+        element: (
+          <ProtectedRoute allowedRoles={['INSPECTOR']}>
+            <PendingByInstitution />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'dashboard/fiscal/metas',
+        element: (
+          <ProtectedRoute allowedRoles={['INSPECTOR']}>
+            <Goals />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'dashboard/standard-checklist',
         element: (
           <ProtectedRoute allowedRoles={['INSPECTOR']}>
@@ -171,6 +191,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['RT']}>
             <ChecklistRT />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'rt/history',
+        element: (
+          <ProtectedRoute allowedRoles={['RT']}>
+            <InspectionHistory />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'rt/history/:id',
+        element: (
+          <ProtectedRoute allowedRoles={['RT']}>
+            <InspectionHistoryDetail />
           </ProtectedRoute>
         ),
       },

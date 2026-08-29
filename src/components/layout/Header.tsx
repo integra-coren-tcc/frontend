@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import MobileMenu from "./MobileMenu";
+import NotificationBell from "./NotificationBell";
 import { useUserStore } from "@/stores/userStore";
 
 interface HeaderProps {
@@ -18,7 +19,7 @@ interface HeaderProps {
   userName?: string; // Optional now
 }
 
-const Header = ({ }: HeaderProps) => {
+const Header = (_props: HeaderProps) => {
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
 
@@ -65,6 +66,8 @@ const Header = ({ }: HeaderProps) => {
 
         {/* Right Side - User Menu */}
         <div className="flex items-center gap-4">
+          <NotificationBell />
+
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "./FiscalDashboard.module.css";
 import { inspectionsService } from "@/services/inspectionsService";
 import { useSocket } from "@/contexts/SocketContext";
+import { getErrorStatus } from "@/lib/getErrorMessage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { Inspection, InspectionStatus } from "@/@types/Inspection";
@@ -135,7 +136,15 @@ const FiscalDashboard: React.FC = () => {
 
       // Navegar para o checklist
       navigate(`/checklist/${inspectionId}`);
-    } catch (err) {
+    } catch (err: unknown) {
+      // Instituição sem RT vinculado: o backend bloqueia essa transição até o fiscal
+      // informar o RT manualmente. Nesse caso, seguimos para o checklist normalmente —
+      // a própria tela do checklist exibe o modal para coletar nome/COREN do RT.
+      if (getErrorStatus(err) === 409) {
+        navigate(`/checklist/${inspectionId}`);
+        return;
+      }
+
       console.error('Erro ao iniciar fiscalização:', err);
       alert('Não foi possível iniciar a fiscalização. Tente novamente.');
     } finally {
@@ -354,7 +363,7 @@ const FiscalDashboard: React.FC = () => {
                         )}
 
                         <div className={styles.cardDescription}>
-                          RT: {inspection.responsibleTechnician?.user.name || 'Não atribuído'}
+                          RT: {inspection.responsibleTechnician?.user.name || inspection.manualRtName || 'Não atribuído'}
                         </div>
 
                         <div

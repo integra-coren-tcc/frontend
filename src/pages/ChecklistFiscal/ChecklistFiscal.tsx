@@ -11,7 +11,6 @@ import {
   Send,
   Loader2,
   MessageSquare,
-  Paperclip,
   Save,
   SaveAll,
   Flag,
@@ -22,6 +21,9 @@ import {
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import InteractionHistory from "@/components/InteractionHistory/InteractionHistory";
+import ManualRtModal from "@/components/inspections/ManualRtModal";
+import InternalNotePanel from "@/components/checklist/InternalNotePanel";
+import { getErrorMessage } from "@/lib/getErrorMessage";
 import Header from "@/components/layout/Header";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./Checklist.module.css";
@@ -59,6 +61,7 @@ const ChecklistFiscal: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showDraftModal, setShowDraftModal] = useState<{ show: boolean, type: 'success' | 'error' }>({ show: false, type: 'success' });
   const [showFinalizeWarning, setShowFinalizeWarning] = useState(false);
+  const [savingManualRt, setSavingManualRt] = useState(false);
 
   // Determinar modo baseado no status
   // SCHEDULED ou IN_PROGRESS_INSPECTOR -> Modo Formulário (initial)
@@ -70,6 +73,32 @@ const ChecklistFiscal: React.FC = () => {
         inspection?.status === InspectionStatus.IN_PROGRESS_INSPECTOR
         ? "initial"
         : "monitoring";
+
+  // Instituição sem RT cadastrado: o fiscal precisa informar o RT manualmente antes de continuar
+  const needsManualRt =
+    fiscalizationMode === "initial" &&
+    !!inspection &&
+    !inspection.responsibleTechnician &&
+    !inspection.manualRtName;
+
+  const handleConfirmManualRt = async (name: string, crm: string) => {
+    if (!id) return;
+    try {
+      setSavingManualRt(true);
+      const updated = await inspectionsService.update(id, {
+        status: InspectionStatus.IN_PROGRESS_INSPECTOR,
+        manualRtName: name,
+        manualRtCrm: crm,
+      });
+      setInspection(updated);
+      setChecklistItems(updated.checklistItems);
+    } catch (err: unknown) {
+      console.error("Erro ao salvar RT manual:", err);
+      toast.error(getErrorMessage(err, "Não foi possível salvar os dados do RT."));
+    } finally {
+      setSavingManualRt(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -90,7 +119,7 @@ const ChecklistFiscal: React.FC = () => {
       console.log('🔍 Inspection data received:', data);
       console.log('🔍 Checklist items:', data.checklistItems);
       if (data.checklistItems && data.checklistItems.length > 0) {
-        const itemsWithComments = data.checklistItems.filter((item: any) => item.comments && item.comments.length > 0);
+        const itemsWithComments = data.checklistItems.filter((item) => item.comments && item.comments.length > 0);
         console.log('🔍 Items with comments:', itemsWithComments);
       }
 
@@ -98,7 +127,10 @@ const ChecklistFiscal: React.FC = () => {
       setChecklistItems(data.checklistItems || []);
 
       // Se não houver itens, disparar Self-healing
-      if (data.checklistItems.length === 0) {
+      // (mas só se já tivermos um RT vinculado ou informado manualmente — caso contrário,
+      // o ManualRtModal cuidará da transição de status após o fiscal preencher o RT)
+      const missingRt = !data.responsibleTechnician && !data.manualRtName;
+      if (data.checklistItems.length === 0 && !missingRt) {
         await handleNoItemsBug();
       }
     } catch (err) {
@@ -194,6 +226,15 @@ const ChecklistFiscal: React.FC = () => {
   };
 
   const handleFinalizeClick = () => {
+    const pendingCount = checklistItems.filter(item => item.status === ItemStatus.PENDING).length;
+
+    if (pendingCount > 0) {
+      toast.error(
+        `Ainda há ${pendingCount} ${pendingCount === 1 ? "item" : "itens"} não avaliado${pendingCount === 1 ? "" : "s"}. Marque todos os itens (conforme, não conforme ou não aplicável) antes de finalizar.`
+      );
+      return;
+    }
+
     // Abre o modal de aviso antes de executar
     setShowFinalizeWarning(true);
   };
@@ -205,17 +246,7 @@ const ChecklistFiscal: React.FC = () => {
     try {
       setSaving(true);
 
-      // 1. Encontrar itens PENDENTES e marcar como COMPLIANT
-      const pendingItems = checklistItems.filter(item => item.status === ItemStatus.PENDING);
-
-      console.log(`Auto-completing ${pendingItems.length} pending items...`);
-
-      // Atualizar itens pendentes para CONFORME (um por um, idealmente seria batch no backend)
-      await Promise.all(pendingItems.map(item =>
-        checklistItemsService.updateStatus(item.publicId, { status: ItemStatus.COMPLIANT })
-      ));
-
-      // 2. Atualizar status da inspeção para AWAITING_CORRECTION
+      // Atualizar status da inspeção para AWAITING_CORRECTION
       // Backend calculará deadlines automaticamente para os NON_COMPLIANT
       const updated = await inspectionsService.update(id, {
         status: InspectionStatus.AWAITING_CORRECTION,
@@ -227,9 +258,9 @@ const ChecklistFiscal: React.FC = () => {
       // Show Success Modal instead of Alert
       setShowSuccessModal(true);
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Erro ao finalizar fiscalização:", err);
-      alert("Não foi possível finalizar a fiscalização");
+      toast.error(getErrorMessage(err, "Não foi possível finalizar a fiscalização."));
     } finally {
       setSaving(false);
     }
@@ -331,11 +362,13 @@ const ChecklistFiscal: React.FC = () => {
           yPosition += lines.length * 5 + 2;
         }
 
-        if (item.comments && item.comments.length > 0) {
+        const reportableComments = item.comments?.filter((c) => !c.isInternalNote) ?? [];
+
+        if (reportableComments.length > 0) {
           pdf.text('Comentários:', 25, yPosition);
           yPosition += 5;
 
-          item.comments.forEach((comment) => {
+          reportableComments.forEach((comment) => {
             if (yPosition > pageHeight - 20) {
               pdf.addPage();
               yPosition = 20;
@@ -552,6 +585,14 @@ const ChecklistFiscal: React.FC = () => {
         </div>
       )}
 
+      {/* Manual RT Modal (institution has no RT on file) */}
+      <ManualRtModal
+        open={needsManualRt}
+        submitting={savingManualRt}
+        onCancel={() => navigate("/dashboard/fiscal")}
+        onConfirm={handleConfirmManualRt}
+      />
+
       {/* Finalize Warning Modal */}
       {showFinalizeWarning && (
         <div className={styles.modalOverlay}>
@@ -560,7 +601,7 @@ const ChecklistFiscal: React.FC = () => {
             <h2 className={styles.modalTitle}>Finalizar Fiscalização?</h2>
             <p className={styles.modalDescription}>
               Tem certeza que deseja finalizar? <br />
-              <strong>Todos os itens não marcados serão considerados CONFORMES.</strong>
+              <strong>O checklist será enviado ao Responsável Técnico para resposta às não conformidades.</strong>
             </p>
             <div className={styles.modalActions} style={{ gap: 10 }}>
               <button
@@ -635,7 +676,8 @@ const ChecklistFiscal: React.FC = () => {
                   type="button"
                   className={`${styles.button} ${styles.buttonPrimary}`}
                   onClick={handleFinalizeClick}
-                  disabled={saving}
+                  disabled={saving || statusCounts.pending > 0}
+                  title={statusCounts.pending > 0 ? "Avalie todos os itens antes de finalizar" : undefined}
                 >
                   <Save className={styles.buttonIcon} />
                   {saving ? "Finalizando..." : "Finalizar Formulário"}
@@ -675,7 +717,11 @@ const ChecklistFiscal: React.FC = () => {
             </div>
             {fiscalizationMode === "initial" && (
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 14, color: '#666' }}>Itens pendentes serão marcados como CONFORME ao finalizar.</span>
+                <span style={{ fontSize: 14, color: statusCounts.pending > 0 ? '#dc2626' : '#666' }}>
+                  {statusCounts.pending > 0
+                    ? `${statusCounts.pending} ${statusCounts.pending === 1 ? "item pendente" : "itens pendentes"} — avalie todos para finalizar.`
+                    : "Todos os itens foram avaliados."}
+                </span>
               </div>
             )}
           </div>
@@ -845,57 +891,18 @@ const ChecklistFiscal: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Interaction History */}
-                          {item.comments && item.comments.length > 0 && (
-                            <InteractionHistory comments={item.comments} />
+                          {/* Interaction History (internal notes excluded — they have their own panel) */}
+                          {item.comments && item.comments.filter((c) => !c.isInternalNote).length > 0 && (
+                            <InteractionHistory comments={item.comments.filter((c) => !c.isInternalNote)} />
                           )}
 
-                          {/* RT Evidence Display (Comments + Attachments) - KEEP OLD FOR FALLBACK */}
-                          {false && (item.status === ItemStatus.AWAITING_ANALYSIS || item.status === ItemStatus.COMPLIANT) && item.comments && item.comments.length > 0 && (
-                            <div style={{ marginTop: 16, padding: 12, background: item.status === ItemStatus.COMPLIANT ? '#f0fdf4' : '#f0f9ff', borderRadius: 8, border: item.status === ItemStatus.COMPLIANT ? '1px solid #86efac' : '1px solid #bfdbfe' }}>
-                              <h4 style={{ margin: '0 0 8px', fontSize: '0.875rem', fontWeight: 600, color: item.status === ItemStatus.COMPLIANT ? '#15803d' : '#1e40af' }}>
-                                {item.status === ItemStatus.COMPLIANT ? '✅ Histórico de Correção:' : '📎 Evidências Enviadas pelo RT:'}
-                              </h4>
-                              {item.comments.map((comment, idx) => (
-                                <div key={comment.publicId} style={{ marginBottom: idx < item.comments!.length - 1 ? 12 : 0 }}>
-                                  <p style={{ margin: '0 0 8px', fontSize: '0.875rem', color: '#374151' }}>
-                                    <strong>{comment.user.name}</strong> ({new Date(comment.createdAt).toLocaleString('pt-BR')}):
-                                  </p>
-                                  <p style={{ margin: '0 0 8px', fontSize: '0.875rem', color: '#6b7280' }}>{comment.text}</p>
-                                  {comment.attachments && comment.attachments.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                      {comment.attachments.map((attachment) => (
-                                        <a
-                                          key={attachment.publicId}
-                                          href={`http://localhost:3333${attachment.url}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                            padding: '6px 10px',
-                                            background: '#fff',
-                                            border: '1px solid #e5e7eb',
-                                            borderRadius: 4,
-                                            fontSize: '0.8125rem',
-                                            color: '#2563eb',
-                                            textDecoration: 'none',
-                                            width: 'fit-content',
-                                          }}
-                                        >
-                                          <Paperclip size={14} />
-                                          {attachment.originalName || attachment.fileName}
-                                          <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                            ({(attachment.size! / 1024).toFixed(0)} KB)
-                                          </span>
-                                        </a>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
+                          {/* Internal Notes (informal, not part of the report) */}
+                          {id && (
+                            <InternalNotePanel
+                              inspectionId={id}
+                              item={item}
+                              onSent={loadInspectionData}
+                            />
                           )}
 
                           {/* Review Actions (Approve/Reject Fix) */}

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Building2, Users, FileText, Calendar, TrendingUp, ClipboardCheck } from "lucide-react";
+import { Menu, X, Building2, Users, FileText, Calendar, TrendingUp, ClipboardCheck, AlertTriangle, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -48,12 +48,14 @@ const MobileMenu = ({ userType }: MobileMenuProps) => {
           { icon: TrendingUp, label: "Dashboard", path: "/dashboard/fiscal" },
           { icon: Calendar, label: "Agendar Fiscalização", path: "/fiscal/schedule" },
           { icon: ClipboardCheck, label: "Checklist", path: "/checklist" },
+          { icon: AlertTriangle, label: "Pendências por Instituição", path: "/dashboard/fiscal/pendencias" },
+          { icon: Target, label: "Metas", path: "/dashboard/fiscal/metas" },
           { icon: FileText, label: "Meus Relatórios", path: "/fiscal/reports" },
         ];
       case "rt":
         return [
           { icon: TrendingUp, label: "Dashboard", path: "/dashboard/rt" },
-
+          { icon: FileText, label: "Histórico da Instituição", path: "/rt/history" },
         ];
       default:
         return [];
