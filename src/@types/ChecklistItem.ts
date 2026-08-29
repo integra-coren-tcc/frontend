@@ -36,7 +36,6 @@ export interface ChecklistComment {
     id: number
     publicId: string
     text: string
-    isInternalNote: boolean
     createdAt: string
     user: {
         id: number

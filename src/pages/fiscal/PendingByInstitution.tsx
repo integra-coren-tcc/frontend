@@ -21,6 +21,27 @@ const STATUS_LABELS: Record<string, string> = {
   [InspectionStatus.AWAITING_CORRECTION]: "Aguardando Correção",
 };
 
+function getCountdown(deadline: string): { label: string; overdue: boolean } {
+  const diffMs = new Date(deadline).getTime() - Date.now();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: `Venceu há ${Math.abs(diffDays)} dia${Math.abs(diffDays) === 1 ? "" : "s"}`, overdue: true };
+  }
+  if (diffDays === 0) {
+    return { label: "Vence hoje", overdue: true };
+  }
+  if (diffDays === 1) {
+    return { label: "Vence amanhã", overdue: false };
+  }
+  return { label: `Vence em ${diffDays} dias`, overdue: false };
+}
+
+// Ordena o mais urgente primeiro (prazo mais próximo/vencido no topo)
+function sortByDeadlineAsc<T extends { deadline: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+}
+
 const PendingByInstitution = () => {
   const navigate = useNavigate();
   const { user } = useUserStore();
@@ -100,46 +121,63 @@ const PendingByInstitution = () => {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-3 pb-2">
-                    {group.inspections.map((inspection) => (
-                      <div
-                        key={inspection.id}
-                        className="border rounded-md p-3 cursor-pointer hover:bg-muted/40"
-                        onClick={() => navigate(`/checklist/${inspection.id}`)}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-medium">
-                              {new Date(inspection.date).toLocaleDateString("pt-BR")}
-                            </p>
-                            <Badge variant="outline" className="mt-1">
-                              {STATUS_LABELS[inspection.status] || inspection.status}
-                            </Badge>
-                          </div>
-                          {inspection.nearDeadlineItems.length > 0 && (
-                            <Badge variant="destructive">
-                              {inspection.nearDeadlineItems.length} perto do prazo
-                            </Badge>
-                          )}
-                        </div>
-
-                        {inspection.nearDeadlineItems.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {inspection.nearDeadlineItems.map((item) => (
-                              <div
-                                key={item.itemCode}
-                                className="flex items-center gap-2 text-xs text-muted-foreground"
-                              >
-                                <Clock className="w-3 h-3" />
-                                <span>{item.notification}</span>
-                                <span className="ml-auto">
-                                  {new Date(item.deadline).toLocaleDateString("pt-BR")}
-                                </span>
+                    {[...group.inspections]
+                      .sort((a, b) => {
+                        const aEarliest = sortByDeadlineAsc(a.nearDeadlineItems)[0]?.deadline;
+                        const bEarliest = sortByDeadlineAsc(b.nearDeadlineItems)[0]?.deadline;
+                        if (aEarliest && bEarliest) {
+                          return new Date(aEarliest).getTime() - new Date(bEarliest).getTime();
+                        }
+                        if (aEarliest) return -1;
+                        if (bEarliest) return 1;
+                        return new Date(a.date).getTime() - new Date(b.date).getTime();
+                      })
+                      .map((inspection) => {
+                        const sortedItems = sortByDeadlineAsc(inspection.nearDeadlineItems);
+                        return (
+                          <div
+                            key={inspection.id}
+                            className="border rounded-md p-3 cursor-pointer hover:bg-muted/40"
+                            onClick={() => navigate(`/checklist/${inspection.id}`)}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {new Date(inspection.date).toLocaleDateString("pt-BR")}
+                                </p>
+                                <Badge variant="outline" className="mt-1">
+                                  {STATUS_LABELS[inspection.status] || inspection.status}
+                                </Badge>
                               </div>
-                            ))}
+                              {sortedItems.length > 0 && (
+                                <Badge variant="destructive">
+                                  {sortedItems.length} perto do prazo
+                                </Badge>
+                              )}
+                            </div>
+
+                            {sortedItems.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {sortedItems.map((item) => {
+                                  const countdown = getCountdown(item.deadline);
+                                  return (
+                                    <div
+                                      key={item.itemCode}
+                                      className="flex items-center gap-2 text-xs"
+                                    >
+                                      <Clock className={`w-3 h-3 ${countdown.overdue ? "text-destructive" : "text-muted-foreground"}`} />
+                                      <span className="text-muted-foreground">{item.notification}</span>
+                                      <span className={`ml-auto font-medium whitespace-nowrap ${countdown.overdue ? "text-destructive" : "text-muted-foreground"}`}>
+                                        {countdown.label}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                        );
+                      })}
                   </div>
                 </AccordionContent>
               </AccordionItem>

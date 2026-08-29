@@ -115,7 +115,7 @@ const InspectionHistoryDetail = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {items.map((item) => {
-                  const reportableComments = (item.comments ?? []).filter((c) => !c.isInternalNote);
+                  const reportableComments = item.comments ?? [];
 
                   return (
                     <div key={item.publicId} className="border rounded-lg p-4">

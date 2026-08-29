@@ -7,16 +7,18 @@ import {
   CheckSquare,
   AlertTriangle,
   Bell,
+  BookOpen,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useNavigate } from "react-router-dom";
 import styles from "./FiscalDashboard.module.css";
 import { inspectionsService } from "@/services/inspectionsService";
+import { inspectorGoalsService } from "@/services/inspectorGoalsService";
 import { useSocket } from "@/contexts/SocketContext";
 import { getErrorStatus } from "@/lib/getErrorMessage";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
-import { Inspection, InspectionStatus } from "@/@types/Inspection";
+import { Inspection, InspectionStatus, PendingByInstitutionGroup } from "@/@types/Inspection";
 import ReportModal from "./ReportModal";
 
 type Stats = {
@@ -25,6 +27,13 @@ type Stats = {
   completedThisMonth: number;
   pendingReports: number;
 };
+
+type GoalsSummary = {
+  targetYearTotal: number;
+  completedYearTotal: number;
+};
+
+const UPCOMING_LIST_LIMIT = 6;
 
 import { useUserStore } from "@/stores/userStore";
 
@@ -48,6 +57,11 @@ const FiscalDashboard: React.FC = () => {
   const [startingInspectionId, setStartingInspectionId] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
+  const [nearDeadlineCount, setNearDeadlineCount] = useState(0);
+  const [goalsSummary, setGoalsSummary] = useState<GoalsSummary>({
+    targetYearTotal: 0,
+    completedYearTotal: 0,
+  });
 
   useEffect(() => {
     loadDashboardData();
@@ -90,12 +104,28 @@ const FiscalDashboard: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Carregar todas as inspeções (filtrado por inspector)
-      const inspections = await inspectionsService.getAll({
-        inspectorId: user?.id
-      });
+      // Carregar todas as inspeções (filtrado por inspector), pendências por
+      // instituição (para o resumo de prazos) e progresso das metas do ano —
+      // em paralelo para não serializar as chamadas.
+      const currentYear = new Date().getFullYear();
+      const [inspections, pendingGroups, goalsProgress] = await Promise.all([
+        inspectionsService.getAll({ inspectorId: user?.id }),
+        inspectionsService.getPendingByInstitution().catch(() => [] as PendingByInstitutionGroup[]),
+        inspectorGoalsService.getProgress(currentYear).catch(() => null),
+      ]);
 
       setUpcomingFiscalizations(inspections);
+
+      setNearDeadlineCount(
+        pendingGroups.reduce((sum: number, group) => sum + group.nearDeadlineCount, 0)
+      );
+
+      if (goalsProgress) {
+        setGoalsSummary({
+          targetYearTotal: goalsProgress.months.reduce((sum, m) => sum + m.targetCount, 0),
+          completedYearTotal: goalsProgress.months.reduce((sum, m) => sum + m.completedCount, 0),
+        });
+      }
 
       // Calcular estatísticas
       const scheduledCount = inspections.filter(i => i.status === 'SCHEDULED').length;
@@ -184,6 +214,15 @@ const FiscalDashboard: React.FC = () => {
       ? `RT enviou ${awaitingCount} ${awaitingCount === 1 ? 'item' : 'itens'} para análise`
       : '';
   };
+
+  // Com muitas instituições sob responsabilidade do fiscal, mostrar tudo de uma vez
+  // vira ruído — priorizamos as mais próximas da data e limitamos a lista, com um
+  // link para a visão completa (agrupada por instituição) em "Pendências".
+  const sortedUpcoming = [...upcomingFiscalizations]
+    .filter((i) => i.status !== InspectionStatus.COMPLETED)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const visibleUpcoming = sortedUpcoming.slice(0, UPCOMING_LIST_LIMIT);
+  const hiddenUpcomingCount = sortedUpcoming.length - visibleUpcoming.length;
 
   if (loading) {
     return (
@@ -302,6 +341,40 @@ const FiscalDashboard: React.FC = () => {
               <p className={styles.cardDescription}>Relatórios pendentes</p>
             </div>
           </div>
+
+          <div
+            className={`${styles.card} ${styles.warningBorder}`}
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/dashboard/fiscal/pendencias")}
+            title="Ver pendências por instituição"
+          >
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Perto do Prazo</h3>
+              <Clock className={`${styles.cardIcon} ${styles.warningText}`} />
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardValue}>{nearDeadlineCount}</div>
+              <p className={styles.cardDescription}>Itens a vencer em breve — ver por instituição</p>
+            </div>
+          </div>
+
+          <div
+            className={`${styles.card} ${styles.successBorder}`}
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/dashboard/fiscal/metas")}
+            title="Ver metas do ano"
+          >
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>Meta Anual</h3>
+              <CheckSquare className={`${styles.cardIcon} ${styles.successText}`} />
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.cardValue}>
+                {goalsSummary.completedYearTotal}/{goalsSummary.targetYearTotal || "–"}
+              </div>
+              <p className={styles.cardDescription}>Fiscalizações concluídas x meta do ano</p>
+            </div>
+          </div>
         </div>
 
         {/* Próximas Fiscalizações + Ações rápidas */}
@@ -317,10 +390,10 @@ const FiscalDashboard: React.FC = () => {
 
             <div className={styles.cardContent}>
               <div className={styles.quickActionsContent}>
-                {upcomingFiscalizations.length === 0 ? (
+                {visibleUpcoming.length === 0 ? (
                   <p className={styles.cardDescription}>Nenhuma fiscalização encontrada</p>
                 ) : (
-                  upcomingFiscalizations.map((inspection) => (
+                  visibleUpcoming.map((inspection) => (
                     <div
                       key={inspection.id}
                       className={styles.actionButton}
@@ -424,6 +497,17 @@ const FiscalDashboard: React.FC = () => {
                     </div>
                   ))
                 )}
+                {hiddenUpcomingCount > 0 && (
+                  <button
+                    type="button"
+                    className={styles.actionButton}
+                    onClick={() => navigate("/dashboard/fiscal/pendencias")}
+                  >
+                    <div className={styles.actionTitle}>
+                      Ver mais {hiddenUpcomingCount} fiscalizaç{hiddenUpcomingCount === 1 ? "ão" : "ões"} por instituição →
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -460,6 +544,48 @@ const FiscalDashboard: React.FC = () => {
                   <div className={styles.actionTitle}>Checklist Padrão</div>
                   <div className={styles.actionDescription}>
                     Visualizar itens de verificação
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/dashboard/fiscal/pendencias")}
+              >
+                <AlertTriangle className={`${styles.actionIcon} ${styles.warningText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Pendências por Instituição</div>
+                  <div className={styles.actionDescription}>
+                    Cobranças e prazos, agrupados por instituição
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/dashboard/fiscal/metas")}
+              >
+                <Calendar className={`${styles.actionIcon} ${styles.infoText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Metas</div>
+                  <div className={styles.actionDescription}>
+                    Acompanhar metas mensais e anuais
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/wiki")}
+              >
+                <BookOpen className={`${styles.actionIcon} ${styles.infoText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Ajuda & Wiki</div>
+                  <div className={styles.actionDescription}>
+                    Como explicar o papel do RT para a instituição
                   </div>
                 </div>
               </button>

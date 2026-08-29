@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import jsPDF from "jspdf";
 import InteractionHistory from "@/components/InteractionHistory/InteractionHistory";
-import InternalNotePanel from "@/components/checklist/InternalNotePanel";
+import CategoryNotesPanel from "@/components/checklist/CategoryNotesPanel";
 import { getErrorMessage } from "@/lib/getErrorMessage";
 import Header from "@/components/layout/Header";
 import { useParams, useNavigate } from "react-router-dom";
@@ -333,7 +333,8 @@ const ChecklistRT: React.FC = () => {
 
       <Header userType="rt" userName={user?.name || "RT"} />
 
-      <div className={styles.pageContainer}>
+      <div className={styles.splitLayout}>
+      <div className={styles.pageContainer} style={{ flex: 1, minWidth: 0, margin: 0 }}>
         <div className={styles.pageHeader}>
           <div>
             <h1>
@@ -415,18 +416,9 @@ const ChecklistRT: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Interaction History (internal notes excluded — they have their own panel) */}
-                  {item.comments && item.comments.filter((c) => !c.isInternalNote).length > 0 && (
-                    <InteractionHistory comments={item.comments.filter((c) => !c.isInternalNote)} />
-                  )}
-
-                  {/* Internal Notes (informal, not part of the report) */}
-                  {inspection?.id && (
-                    <InternalNotePanel
-                      inspectionId={inspection.id}
-                      item={item}
-                      onSent={loadInspectionData}
-                    />
+                  {/* Interaction History */}
+                  {item.comments && item.comments.length > 0 && (
+                    <InteractionHistory comments={item.comments} />
                   )}
 
                   {/* Countdown for Pending Items */}
@@ -512,6 +504,9 @@ const ChecklistRT: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {inspection?.id && <CategoryNotesPanel inspectionId={inspection.id} itemType={activeTab} />}
       </div>
     </div>
   );

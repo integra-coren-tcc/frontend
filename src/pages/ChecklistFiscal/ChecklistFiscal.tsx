@@ -22,7 +22,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import InteractionHistory from "@/components/InteractionHistory/InteractionHistory";
 import ManualRtModal from "@/components/inspections/ManualRtModal";
-import InternalNotePanel from "@/components/checklist/InternalNotePanel";
+import CategoryNotesPanel from "@/components/checklist/CategoryNotesPanel";
 import { getErrorMessage } from "@/lib/getErrorMessage";
 import Header from "@/components/layout/Header";
 import { useParams, useNavigate } from "react-router-dom";
@@ -362,7 +362,7 @@ const ChecklistFiscal: React.FC = () => {
           yPosition += lines.length * 5 + 2;
         }
 
-        const reportableComments = item.comments?.filter((c) => !c.isInternalNote) ?? [];
+        const reportableComments = item.comments ?? [];
 
         if (reportableComments.length > 0) {
           pdf.text('Comentários:', 25, yPosition);
@@ -623,7 +623,8 @@ const ChecklistFiscal: React.FC = () => {
 
       <Header userType="inspector" userName={user?.name || "Fiscal"} />
 
-      <div className={styles.pageContainer}>
+      <div className={styles.splitLayout}>
+      <div className={styles.pageContainer} style={{ flex: 1, minWidth: 0, margin: 0 }}>
         {/* Header */}
         <div className={styles.pageHeader}>
           <div className={styles.headerContent}>
@@ -891,18 +892,9 @@ const ChecklistFiscal: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Interaction History (internal notes excluded — they have their own panel) */}
-                          {item.comments && item.comments.filter((c) => !c.isInternalNote).length > 0 && (
-                            <InteractionHistory comments={item.comments.filter((c) => !c.isInternalNote)} />
-                          )}
-
-                          {/* Internal Notes (informal, not part of the report) */}
-                          {id && (
-                            <InternalNotePanel
-                              inspectionId={id}
-                              item={item}
-                              onSent={loadInspectionData}
-                            />
+                          {/* Interaction History */}
+                          {item.comments && item.comments.length > 0 && (
+                            <InteractionHistory comments={item.comments} />
                           )}
 
                           {/* Review Actions (Approve/Reject Fix) */}
@@ -969,6 +961,9 @@ const ChecklistFiscal: React.FC = () => {
               )}
           </div>
         </div>
+      </div>
+
+      {id && <CategoryNotesPanel inspectionId={id} itemType={activeTab} />}
       </div>
     </div>
   );

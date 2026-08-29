@@ -10,6 +10,7 @@ import RTDashboard from '../pages/RTDashboard/RTDashboard'
 import InspectionHistory from '../pages/rt/InspectionHistory'
 import InspectionHistoryDetail from '../pages/rt/InspectionHistoryDetail'
 import Profile from '../pages/Profile/Profile'
+import Wiki from '../pages/Wiki/Wiki'
 import InstitutionManagement from '../pages/InstitutionManagementAdmin/InstitutionManagement'
 import FiscalManagement from '../pages/FiscalManagementAdmin/FiscalManagement'
 import RTManagement from '../pages/RTManagementAdmin/RTManagement'
@@ -228,6 +229,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT']}>
             <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'wiki',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT']}>
+            <Wiki />
           </ProtectedRoute>
         ),
       },

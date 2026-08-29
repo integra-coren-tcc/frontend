@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, AlertCircle, CheckCircle, Bell } from "lucide-react";
+import { Calendar, AlertCircle, CheckCircle, Bell, History, BookOpen } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useNavigate } from "react-router-dom";
 import styles from "./RTDashboard.module.css";
@@ -225,6 +225,25 @@ const RTDashboard: React.FC = () => {
             <p className={styles.pageSubtitle}>
               {user?.name} - Contratado(a)
             </p>
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.buttonOutline}`}
+              onClick={() => navigate("/rt/history")}
+            >
+              <History size={16} style={{ marginRight: 8 }} />
+              Histórico da Instituição
+            </button>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.buttonOutline}`}
+              onClick={() => navigate("/wiki")}
+            >
+              <BookOpen size={16} style={{ marginRight: 8 }} />
+              Ajuda &amp; Wiki
+            </button>
           </div>
         </div>
 

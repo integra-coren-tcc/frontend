@@ -22,7 +22,6 @@ export interface ChecklistItemHistoryEntry {
 export interface CreateChecklistCommentResponse {
     id: string
     text: string
-    isInternalNote: boolean
     user: {
         id: number
         name: string
@@ -67,12 +66,10 @@ export const checklistItemsService = {
         inspectionId: string,
         itemCode: string,
         text: string,
-        files?: File[],
-        isInternalNote?: boolean
+        files?: File[]
     ): Promise<CreateChecklistCommentResponse> {
         const formData = new FormData()
         formData.append('text', text)
-        formData.append('isInternalNote', isInternalNote ? 'true' : 'false')
 
         if (files && files.length > 0) {
             console.log('🔵 Frontend: Appending files to FormData:', files.length)

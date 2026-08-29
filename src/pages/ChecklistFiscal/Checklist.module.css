@@ -27,6 +27,21 @@
     padding: 2rem 1.5rem;
 }
 
+.splitLayout {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    max-width: 1650px;
+    margin: 0 auto;
+    padding-right: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .splitLayout {
+        flex-direction: column;
+    }
+}
+
 /* --- Header --- */
 .pageHeader {
     display: flex;
