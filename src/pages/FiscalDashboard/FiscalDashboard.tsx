@@ -8,6 +8,9 @@ import {
   AlertTriangle,
   Bell,
   BookOpen,
+  MessagesSquare,
+  FolderOpen,
+  Library,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useNavigate } from "react-router-dom";
@@ -572,6 +575,48 @@ const FiscalDashboard: React.FC = () => {
                   <div className={styles.actionTitle}>Metas</div>
                   <div className={styles.actionDescription}>
                     Acompanhar metas mensais e anuais
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/chamados")}
+              >
+                <MessagesSquare className={`${styles.actionIcon} ${styles.infoText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Chamados</div>
+                  <div className={styles.actionDescription}>
+                    Canal direto com os RTs das instituições
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/documentos-instituicao")}
+              >
+                <FolderOpen className={`${styles.actionIcon} ${styles.infoText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Documentos das Instituições</div>
+                  <div className={styles.actionDescription}>
+                    Regimento, dimensionamento, PRS e protocolos atualizados
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => navigate("/biblioteca")}
+              >
+                <Library className={`${styles.actionIcon} ${styles.infoText}`} />
+                <div>
+                  <div className={styles.actionTitle}>Biblioteca</div>
+                  <div className={styles.actionDescription}>
+                    Legislação, manuais e modelos de documentos
                   </div>
                 </div>
               </button>

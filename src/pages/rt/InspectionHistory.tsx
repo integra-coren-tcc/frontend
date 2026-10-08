@@ -7,7 +7,7 @@ import Header from "@/components/layout/Header";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/userStore";
 import { inspectionsService } from "@/services/inspectionsService";
-import { Inspection, InspectionStatus } from "@/@types/Inspection";
+import { Inspection, InspectionStatus, OUTCOME_LABELS } from "@/@types/Inspection";
 
 const STATUS_LABELS: Record<string, string> = {
   [InspectionStatus.SCHEDULED]: "Agendada",
@@ -20,6 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
 const InspectionHistory = () => {
   const navigate = useNavigate();
   const { user } = useUserStore();
+  const isRt = user?.role === "RT";
 
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,13 @@ const InspectionHistory = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await inspectionsService.getAll();
+        // O RT vê no histórico apenas as fiscalizações concluídas (todos os itens
+        // conformes e encerradas pelo fiscal); o representante legal acompanha
+        // também as que estão em andamento.
+        const data = await inspectionsService.getAll({
+          perPage: 100,
+          ...(isRt ? { compliedOnly: true } : {}),
+        });
         // Mais recentes primeiro
         data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setInspections(data);
@@ -43,7 +50,7 @@ const InspectionHistory = () => {
     };
 
     load();
-  }, []);
+  }, [isRt]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +62,9 @@ const InspectionHistory = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Histórico da Instituição</h1>
             <p className="text-muted-foreground mt-1">
-              Todas as fiscalizações já realizadas na sua instituição, para consulta (somente visualização)
+              {isRt
+                ? "Fiscalizações concluídas da sua instituição — todos os itens conformes e encerradas pelo fiscal (somente visualização)"
+                : "Fiscalizações já enviadas à sua instituição, para consulta (somente visualização)"}
             </p>
           </div>
         </div>
@@ -79,7 +88,9 @@ const InspectionHistory = () => {
               </div>
             ) : inspections.length === 0 ? (
               <p className="text-muted-foreground text-center py-12">
-                Nenhuma fiscalização registrada ainda para esta instituição.
+                {isRt
+                  ? "Nenhuma fiscalização concluída ainda. As fiscalizações em andamento ficam no seu painel."
+                  : "Nenhuma fiscalização registrada ainda para esta instituição."}
               </p>
             ) : (
               <Table>
@@ -88,6 +99,7 @@ const InspectionHistory = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Fiscal</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Desfecho</TableHead>
                     <TableHead>Prioridade</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -105,6 +117,7 @@ const InspectionHistory = () => {
                           {STATUS_LABELS[inspection.status] || inspection.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>{inspection.outcome ? OUTCOME_LABELS[inspection.outcome] : "—"}</TableCell>
                       <TableCell>{inspection.priority}</TableCell>
                     </TableRow>
                   ))}

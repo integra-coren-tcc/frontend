@@ -30,6 +30,8 @@ export const ProtectedRoute = ({ children, allowedRoles, ignorePasswordChange = 
         return <Navigate to="/dashboard/fiscal" replace />
       case 'RT':
         return <Navigate to="/dashboard/rt" replace />
+      case 'LEGAL_REPRESENTATIVE':
+        return <Navigate to="/rt/history" replace />
       default:
         return <Navigate to="/login" replace />
     }

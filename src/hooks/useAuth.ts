@@ -5,7 +5,8 @@ import { axiosPrivate } from '../api/api'
 import type { User, UserRole } from '../@types/User'
 
 interface AuthData {
-  email: string
+  // E-mail ou CPF (v3)
+  login: string
   password: string
 }
 
@@ -68,6 +69,8 @@ export function useAuth() {
         return '/dashboard/fiscal'
       case 'RT':
         return '/dashboard/rt'
+      case 'LEGAL_REPRESENTATIVE':
+        return '/rt/history'
       default:
         return '/'
     }
@@ -77,7 +80,7 @@ export function useAuth() {
     mutationFn: async (data: AuthData): Promise<AuthResponse> => {
       if (USE_MOCK_AUTH) {
         // Mock authentication for development
-        const mockUser = MOCK_USERS[data.email]
+        const mockUser = MOCK_USERS[data.login]
         if (mockUser && mockUser.password === data.password) {
           return {
             accessToken: 'mock-jwt-token-' + Date.now(),
@@ -112,7 +115,12 @@ export function useAuth() {
         })
       } else if (err.response.status === 400) {
         setError('root', {
-          message: 'E-mail ou senha incorretos',
+          message: 'E-mail/CPF ou senha incorretos',
+        })
+      } else if (err.response.status === 403 && err.response.data?.message) {
+        // CRT vencida: o backend explica o motivo do bloqueio
+        setError('root', {
+          message: err.response.data.message,
         })
       } else {
         setError('root', {

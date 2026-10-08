@@ -22,6 +22,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import InteractionHistory from "@/components/InteractionHistory/InteractionHistory";
 import ManualRtModal from "@/components/inspections/ManualRtModal";
+import CloseInspectionModal, { CloseInspectionData } from "@/components/inspections/CloseInspectionModal";
+import OutcomeSummary from "@/components/inspections/OutcomeSummary";
 import CategoryNotesPanel from "@/components/checklist/CategoryNotesPanel";
 import { getErrorMessage } from "@/lib/getErrorMessage";
 import Header from "@/components/layout/Header";
@@ -62,6 +64,7 @@ const ChecklistFiscal: React.FC = () => {
   const [showDraftModal, setShowDraftModal] = useState<{ show: boolean, type: 'success' | 'error' }>({ show: false, type: 'success' });
   const [showFinalizeWarning, setShowFinalizeWarning] = useState(false);
   const [savingManualRt, setSavingManualRt] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
 
   // Determinar modo baseado no status
   // SCHEDULED ou IN_PROGRESS_INSPECTOR -> Modo Formulário (initial)
@@ -266,28 +269,23 @@ const ChecklistFiscal: React.FC = () => {
     }
   };
 
-  const handleAcceptAllConformities = async () => {
-    // Validar que todos os itens estão resolvidos
-    const allResolved = checklistItems.every(
-      (item) =>
-        item.status === ItemStatus.COMPLIANT || item.status === ItemStatus.NOT_APPLICABLE
-    );
+  const closedItemStatuses = [ItemStatus.COMPLIANT, ItemStatus.NOT_APPLICABLE];
+  const openItemsCount = checklistItems.filter((item) => !closedItemStatuses.includes(item.status)).length;
 
-    if (!allResolved) {
-      alert("Todos os itens devem estar conformes para concluir");
-      return;
-    }
-
+  // Encerramento com desfecho explícito (v3): o fiscal registra o resultado,
+  // o parecer e, se as notificações não foram cumpridas, os próximos passos.
+  const handleCloseInspection = async (data: CloseInspectionData) => {
     try {
       setSaving(true);
-      // Update inspection status to COMPLETED
-      await inspectionsService.update(id!, { status: InspectionStatus.COMPLETED });
+      await inspectionsService.update(id!, { status: InspectionStatus.COMPLETED, ...data });
+      toast.success("Fiscalização encerrada. O RT foi notificado do desfecho.");
       navigate("/dashboard/fiscal");
     } catch (err) {
-      console.error("Erro ao finalizar inspeção:", err);
-      alert("Erro ao finalizar a inspeção. Tente novamente.");
+      console.error("Erro ao encerrar inspeção:", err);
+      toast.error(getErrorMessage(err, "Não foi possível encerrar a fiscalização."));
     } finally {
       setSaving(false);
+      setShowCloseModal(false);
     }
   };
 
@@ -585,6 +583,15 @@ const ChecklistFiscal: React.FC = () => {
         </div>
       )}
 
+      <CloseInspectionModal
+        open={showCloseModal}
+        submitting={saving}
+        allItemsClosed={openItemsCount === 0}
+        openItemsCount={openItemsCount}
+        onCancel={() => setShowCloseModal(false)}
+        onConfirm={handleCloseInspection}
+      />
+
       {/* Manual RT Modal (institution has no RT on file) */}
       <ManualRtModal
         open={needsManualRt}
@@ -691,21 +698,23 @@ const ChecklistFiscal: React.FC = () => {
                 <button
                   type="button"
                   className={`${styles.button} ${styles.buttonSuccess}`}
-                  onClick={handleAcceptAllConformities}
-                  disabled={statusCounts.nonCompliant > 0 || statusCounts.awaitingAnalysis > 0}
+                  onClick={() => setShowCloseModal(true)}
+                  disabled={saving || statusCounts.awaitingAnalysis > 0}
                 >
                   <Flag className={styles.buttonIcon} />
-                  Aceitar Conformidades
+                  Encerrar Fiscalização
                 </button>
-                {(statusCounts.nonCompliant > 0 || statusCounts.awaitingAnalysis > 0) && (
+                {statusCounts.awaitingAnalysis > 0 && (
                   <span className={styles.tooltipText}>
-                    As conformidades só podem ser aceitas quando todos os itens estiverem concluídos.
+                    Analise as respostas enviadas pelo RT antes de encerrar.
                   </span>
                 )}
               </div>
             )}
           </div>
         </div>
+
+        {fiscalizationMode === "completed" && <OutcomeSummary inspection={inspection} />}
 
         {/* Stats Overview */}
         <div className={styles.card}>

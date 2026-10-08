@@ -7,7 +7,9 @@ import Header from "@/components/layout/Header";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUserStore } from "@/stores/userStore";
 import { inspectionsService } from "@/services/inspectionsService";
-import { Inspection } from "@/@types/Inspection";
+import { Inspection, InspectionStatus } from "@/@types/Inspection";
+import OutcomeSummary from "@/components/inspections/OutcomeSummary";
+import DeadlineBadge from "@/components/inspections/DeadlineBadge";
 import { ItemType } from "@/@types/ChecklistItem";
 import { getErrorStatus } from "@/lib/getErrorMessage";
 
@@ -104,6 +106,8 @@ const InspectionHistoryDetail = () => {
           <Badge variant="outline" className="ml-auto">{inspection.status}</Badge>
         </div>
 
+        <OutcomeSummary inspection={inspection} />
+
         {categories.map((category) => {
           const items = inspection.checklistItems.filter((item) => item.itemType === category);
           if (items.length === 0) return null;
@@ -135,8 +139,15 @@ const InspectionHistoryDetail = () => {
 
                       {item.deadline && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <Clock className="w-4 h-4" />
-                          Prazo: {new Date(item.deadline).toLocaleDateString("pt-BR")}
+                          {inspection.status === InspectionStatus.AWAITING_CORRECTION &&
+                          (item.status === "NON_COMPLIANT" || item.status === "AWAITING_CORRECTION") ? (
+                            <DeadlineBadge deadline={item.deadline} />
+                          ) : (
+                            <>
+                              <Clock className="w-4 h-4" />
+                              Prazo: {new Date(item.deadline).toLocaleDateString("pt-BR")}
+                            </>
+                          )}
                         </div>
                       )}
 

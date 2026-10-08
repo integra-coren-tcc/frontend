@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Save,
   Paperclip,
-  Clock,
   Send,
   Upload,
   Download,
@@ -23,8 +22,8 @@ import { Inspection, InspectionStatus } from "@/@types/Inspection";
 import { ChecklistItem, ItemStatus, ItemType } from "@/@types/ChecklistItem";
 import { inspectionsService } from "@/services/inspectionsService";
 import { checklistItemsService } from "@/services/checklistItemsService";
-import { intervalToDuration, formatDuration, formatDistanceToNow, isPast } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import DeadlineBadge from "@/components/inspections/DeadlineBadge";
+import OutcomeSummary from "@/components/inspections/OutcomeSummary";
 
 const CATEGORY_MAP: Record<ItemType, string> = {
   [ItemType.ILEGALIDADE]: "Ilegalidades",
@@ -140,27 +139,6 @@ const ChecklistRT: React.FC = () => {
     }
   };
 
-  const getCountdown = (deadline: string | null) => {
-    if (!deadline) return "Sem prazo";
-    const date = new Date(deadline);
-
-    if (isPast(date)) {
-      return <span className={styles.expiredText}>Expirado</span>;
-    }
-
-    // Calcular duração restante
-    const duration = intervalToDuration({
-      start: new Date(),
-      end: date
-    });
-
-    // Formatar manualmente ou usar formatDuration
-    // "Faltam 05 dias, 04h"
-    const days = duration.days || 0;
-    const hours = duration.hours || 0;
-
-    return `${days} dias, ${hours}h restantes`;
-  };
 
   const handleExportPDF = async () => {
     if (!inspection) return;
@@ -286,6 +264,10 @@ const ChecklistRT: React.FC = () => {
   // Progress logic
   const compliantCount = checklistItems.filter(i => i.status === ItemStatus.COMPLIANT || i.status === ItemStatus.NOT_APPLICABLE).length;
   const progress = Math.round((compliantCount / checklistItems.length) * 100) || 0;
+  const awaitingRtCount = checklistItems.filter(
+    (i) => i.status === ItemStatus.NON_COMPLIANT || i.status === ItemStatus.AWAITING_CORRECTION
+  ).length;
+  const awaitingFiscalCount = checklistItems.filter((i) => i.status === ItemStatus.AWAITING_ANALYSIS).length;
 
   return (
     <div className={styles.checklistContainer}>
@@ -357,6 +339,8 @@ const ChecklistRT: React.FC = () => {
           </div>
         </div>
 
+        <OutcomeSummary inspection={inspection} />
+
         {/* Status Card */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
@@ -369,12 +353,19 @@ const ChecklistRT: React.FC = () => {
           <div className={styles.checklistLegend}>
             <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
               <span className={`${styles.badge} ${styles.badgeDanger}`}>
-                {checklistItems.filter(i => i.status === ItemStatus.NON_COMPLIANT).length} Pendentes
+                {awaitingRtCount} Aguardando sua correção
               </span>
               <span className={`${styles.badge} ${styles.badgeWarning}`}>
-                {checklistItems.filter(i => i.status === ItemStatus.AWAITING_ANALYSIS).length} Em Análise
+                {awaitingFiscalCount} Em análise pelo fiscal
               </span>
             </div>
+            {inspection.status !== InspectionStatus.COMPLETED && (
+              <p style={{ marginTop: 12, fontSize: 14, color: '#475569' }}>
+                {awaitingRtCount + awaitingFiscalCount === 0
+                  ? "Nenhuma pendência: o fiscal pode encerrar a fiscalização."
+                  : `Para encerrar faltam ${awaitingRtCount + awaitingFiscalCount} ${awaitingRtCount + awaitingFiscalCount === 1 ? "item" : "itens"}: ${awaitingRtCount} aguardando a sua correção e ${awaitingFiscalCount} em análise pelo fiscal.`}
+              </p>
+            )}
           </div>
         </div>
 
@@ -422,10 +413,11 @@ const ChecklistRT: React.FC = () => {
                   )}
 
                   {/* Countdown for Pending Items */}
-                  {item.status === ItemStatus.NON_COMPLIANT && item.deadline && (
+                  {(item.status === ItemStatus.NON_COMPLIANT || item.status === ItemStatus.AWAITING_CORRECTION) &&
+                    item.deadline &&
+                    inspection.status !== InspectionStatus.COMPLETED && (
                     <div className={styles.deadlineInfo}>
-                      <Clock size={16} className={styles.deadlineIcon} />
-                      <span className={styles.deadlineText}>Prazo: {getCountdown(item.deadline)}</span>
+                      <DeadlineBadge deadline={item.deadline} />
                     </div>
                   )}
 

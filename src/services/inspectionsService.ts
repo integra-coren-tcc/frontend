@@ -14,7 +14,14 @@ export const inspectionsService = {
     /**
      * Lista todas as inspeções
      */
-    async getAll(params?: { inspectorId?: string; institutionId?: string; status?: string }): Promise<Inspection[]> {
+    async getAll(params?: {
+        inspectorId?: string
+        institutionId?: string
+        status?: string
+        // Histórico do RT: só fiscalizações encerradas com todos os itens conformes
+        compliedOnly?: boolean
+        perPage?: number
+    }): Promise<Inspection[]> {
         const response = await axiosPrivate.get(BASE_PATH, { params })
         return response.data.data || []
     },

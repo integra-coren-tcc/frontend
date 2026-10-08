@@ -7,6 +7,9 @@ const BASE_PATH = '/rts'
 export interface RT {
     id: string
     crm: string
+    cpf?: string | null
+    crtNumber?: string | null
+    crtValidUntil?: string | null
     user: User
     userId: number
     institutionId: string
@@ -40,7 +43,7 @@ export const rtsService = {
     /**
      * Cria um novo RT
      */
-    async create(data: Partial<RT> & { name: string; email: string; password?: string, crm: string, institutionId: string }): Promise<RT> {
+    async create(data: Partial<RT> & { name: string; email: string; password?: string, crm: string, institutionId: string, cpf?: string, crtNumber?: string, crtValidUntil?: string }): Promise<RT> {
         const response = await axiosPrivate.post(BASE_PATH, data)
         return response.data
     },

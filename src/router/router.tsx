@@ -27,6 +27,11 @@ import ChecklistRT from '../pages/ChecklistRT/ChecklistRT'
 import GeneralReports from '../pages/GeneralReportsAdmin/GeneralReports'
 
 import StandardChecklist from '../pages/StandardChecklist/StandardChecklist'
+import Library from '../pages/Library/Library'
+import Tickets from '../pages/Tickets/Tickets'
+import InstitutionDocuments from '../pages/InstitutionDocuments/InstitutionDocuments'
+import LegalRepresentatives from '../pages/LegalRepresentativesAdmin/LegalRepresentatives'
+import Tutorial from '../pages/Tutorial/Tutorial'
 import NotFound from '../pages/NotFound/NotFound'
 import ChangePassword from '../pages/Auth/ChangePassword'
 
@@ -119,6 +124,14 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: 'admin/representantes',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <LegalRepresentatives />
+          </ProtectedRoute>
+        ),
+      },
 
       // Fiscal routes
       {
@@ -198,7 +211,7 @@ export const router = createBrowserRouter([
       {
         path: 'rt/history',
         element: (
-          <ProtectedRoute allowedRoles={['RT']}>
+          <ProtectedRoute allowedRoles={['RT', 'LEGAL_REPRESENTATIVE']}>
             <InspectionHistory />
           </ProtectedRoute>
         ),
@@ -206,7 +219,7 @@ export const router = createBrowserRouter([
       {
         path: 'rt/history/:id',
         element: (
-          <ProtectedRoute allowedRoles={['RT']}>
+          <ProtectedRoute allowedRoles={['RT', 'LEGAL_REPRESENTATIVE']}>
             <InspectionHistoryDetail />
           </ProtectedRoute>
         ),
@@ -227,15 +240,47 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT', 'LEGAL_REPRESENTATIVE']}>
             <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'chamados',
+        element: (
+          <ProtectedRoute allowedRoles={['RT', 'INSPECTOR']}>
+            <Tickets />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'biblioteca',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT', 'LEGAL_REPRESENTATIVE']}>
+            <Library />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'documentos-instituicao',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT', 'LEGAL_REPRESENTATIVE']}>
+            <InstitutionDocuments />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'tutorial',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT', 'LEGAL_REPRESENTATIVE']}>
+            <Tutorial />
           </ProtectedRoute>
         ),
       },
       {
         path: 'wiki',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR', 'RT', 'LEGAL_REPRESENTATIVE']}>
             <Wiki />
           </ProtectedRoute>
         ),

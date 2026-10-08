@@ -9,6 +9,21 @@ export enum InspectionStatus {
     COMPLETED = 'COMPLETED',
 }
 
+// Desfecho da fiscalização, registrado pelo fiscal ao encerrar (v3)
+export enum InspectionOutcome {
+    COMPLIED = 'COMPLIED',
+    NOT_COMPLIED = 'NOT_COMPLIED',
+    REFERRED_TO_CONCILIATION = 'REFERRED_TO_CONCILIATION',
+    REFERRED_TO_LEGAL_MEASURES = 'REFERRED_TO_LEGAL_MEASURES',
+}
+
+export const OUTCOME_LABELS: Record<InspectionOutcome, string> = {
+    [InspectionOutcome.COMPLIED]: 'Notificações cumpridas',
+    [InspectionOutcome.NOT_COMPLIED]: 'Notificações não cumpridas',
+    [InspectionOutcome.REFERRED_TO_CONCILIATION]: 'Encaminhada para conciliação',
+    [InspectionOutcome.REFERRED_TO_LEGAL_MEASURES]: 'Encaminhada para as medidas cabíveis',
+}
+
 export enum Priority {
     LOW = 'LOW',
     MEDIUM = 'MEDIUM',
@@ -68,6 +83,9 @@ export interface Inspection {
     responsibleTechnician?: ResponsibleTechnician
     manualRtName?: string | null
     manualRtCrm?: string | null
+    outcome?: InspectionOutcome | null
+    finalOpinion?: string | null
+    nextSteps?: string | null
     checklistItems: ChecklistItem[]
 }
 
@@ -90,6 +108,9 @@ export interface UpdateInspectionRequest {
     completedAt?: string
     manualRtName?: string
     manualRtCrm?: string
+    outcome?: InspectionOutcome
+    finalOpinion?: string
+    nextSteps?: string
 }
 
 // Tipos para responses

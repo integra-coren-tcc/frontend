@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, AlertCircle, CheckCircle, Bell, History, BookOpen } from "lucide-react";
+import { AlertCircle, CheckCircle, Bell, History, BookOpen, MessagesSquare, FolderOpen, Library, GraduationCap, X } from "lucide-react";
+import DeadlineBadge from "@/components/inspections/DeadlineBadge";
+import { getDeadlineUrgency } from "@/lib/deadline";
+import { OUTCOME_LABELS } from "@/@types/Inspection";
 import Header from "@/components/layout/Header";
 import { useNavigate } from "react-router-dom";
 import styles from "./RTDashboard.module.css";
@@ -30,6 +33,22 @@ const RTDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showTutorialBanner, setShowTutorialBanner] = useState(() => {
+    try {
+      return localStorage.getItem("integracoren:tutorial-banner-dismissed") !== "1";
+    } catch {
+      return true;
+    }
+  });
+
+  const dismissTutorialBanner = () => {
+    setShowTutorialBanner(false);
+    try {
+      localStorage.setItem("integracoren:tutorial-banner-dismissed", "1");
+    } catch {
+      // armazenamento indisponível: o aviso volta a aparecer no próximo acesso
+    }
+  };
   const [selectedFiscalization, setSelectedFiscalization] = useState<Inspection | null>(null);
 
   const [stats, setStats] = useState<Stats>({
@@ -194,6 +213,22 @@ const RTDashboard: React.FC = () => {
     }
   };
 
+  // Prazos das notificações em aberto, do mais urgente ao mais distante (v3)
+  const openDeadlines = inspections
+    .filter((insp) => insp.status === InspectionStatus.AWAITING_CORRECTION)
+    .flatMap((insp) =>
+      (insp.checklistItems ?? [])
+        .filter(
+          (item) =>
+            !!item.deadline &&
+            (item.status === ItemStatus.NON_COMPLIANT || item.status === ItemStatus.AWAITING_CORRECTION)
+        )
+        .map((item) => ({ inspection: insp, item, deadline: item.deadline as string }))
+    )
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+
+  const overdueCount = openDeadlines.filter((d) => getDeadlineUrgency(d.deadline) === "overdue").length;
+
   // Obter nome da instituição do primeiro item (assumindo RT de uma instituição principal, ou pegar do user se tiver vinculado)
   const institutionName = inspections.length > 0
     ? inspections[0].institution?.name
@@ -239,6 +274,30 @@ const RTDashboard: React.FC = () => {
             <button
               type="button"
               className={`${styles.button} ${styles.buttonOutline}`}
+              onClick={() => navigate("/chamados")}
+            >
+              <MessagesSquare size={16} style={{ marginRight: 8 }} />
+              Chamados
+            </button>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.buttonOutline}`}
+              onClick={() => navigate("/documentos-instituicao")}
+            >
+              <FolderOpen size={16} style={{ marginRight: 8 }} />
+              Documentos
+            </button>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.buttonOutline}`}
+              onClick={() => navigate("/biblioteca")}
+            >
+              <Library size={16} style={{ marginRight: 8 }} />
+              Biblioteca
+            </button>
+            <button
+              type="button"
+              className={`${styles.button} ${styles.buttonOutline}`}
               onClick={() => navigate("/wiki")}
             >
               <BookOpen size={16} style={{ marginRight: 8 }} />
@@ -246,6 +305,33 @@ const RTDashboard: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {showTutorialBanner && (
+          <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 mb-6">
+            <GraduationCap className="w-5 h-5 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-foreground">Primeira vez por aqui?</p>
+              <p className="text-muted-foreground">
+                Veja o passo a passo de como responder às notificações, acompanhar prazos e falar com o fiscal.
+              </p>
+              <button
+                type="button"
+                className="mt-2 text-primary font-medium hover:underline"
+                onClick={() => navigate("/tutorial")}
+              >
+                Abrir o tutorial
+              </button>
+            </div>
+            <button
+              type="button"
+              aria-label="Dispensar aviso do tutorial"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={dismissTutorialBanner}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Cards de estatísticas */}
         <div className={styles.statsGrid}>
@@ -273,6 +359,48 @@ const RTDashboard: React.FC = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Prazos das notificações (v3): escala de cores por urgência */}
+        <div className={styles.card} style={{ marginBottom: 24 }}>
+          <div className={styles.cardHeader}>
+            <div>
+              <h3 className={styles.sectionTitle}>Prazos das notificações</h3>
+              <p className={styles.sectionDescription}>
+                {openDeadlines.length === 0
+                  ? "Nenhuma notificação com prazo em aberto."
+                  : overdueCount > 0
+                    ? `${overdueCount} ${overdueCount === 1 ? "prazo vencido" : "prazos vencidos"} — envie a correção ou fale com o fiscal.`
+                    : "Do mais urgente ao mais distante."}
+              </p>
+            </div>
+          </div>
+          {openDeadlines.length > 0 && (
+            <div className={styles.cardContent}>
+              <ul className="divide-y">
+                {openDeadlines.slice(0, 8).map(({ inspection, item, deadline }) => (
+                  <li key={`${inspection.id}-${item.itemCode}`}>
+                    <button
+                      type="button"
+                      className="w-full text-left py-3 flex flex-col sm:flex-row sm:items-center gap-2 hover:bg-muted/40 px-2 rounded"
+                      onClick={() => navigate(`/checklistRT/${inspection.id}`)}
+                    >
+                      <span className="flex-1 text-sm">{item.notification}</span>
+                      <DeadlineBadge deadline={deadline} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {openDeadlines.length > 8 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  E mais {openDeadlines.length - 8} {openDeadlines.length - 8 === 1 ? "item" : "itens"} nas fiscalizações abaixo.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-3">
+                Legenda: vermelho = vencido · laranja = até 3 dias · amarelo = até 7 dias · verde = no prazo
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Status das Fiscalizações */}
@@ -325,6 +453,13 @@ const RTDashboard: React.FC = () => {
                       </div>
                       {getStatusBadge(inspection.status)}
                     </div>
+
+                    {inspection.status === InspectionStatus.COMPLETED && inspection.outcome && (
+                      <p className="text-sm mt-2">
+                        <strong>Desfecho:</strong> {OUTCOME_LABELS[inspection.outcome]}
+                        {inspection.nextSteps && <> — próximos passos no relatório.</>}
+                      </p>
+                    )}
 
                     {hasNotification(inspection) && getNotificationMessage(inspection) && (
                       <div className={styles.notificationMessage} style={{ marginTop: 8 }}>

@@ -17,6 +17,12 @@ import { useToast } from "@/hooks/use-toast";
 import { rtsService } from "@/services/rtsService";
 import { institutionsService } from "@/services/institutionsService";
 import { Institution } from "@/@types/Institution";
+import { getErrorMessage } from "@/lib/getErrorMessage";
+import { isValidCpf, maskCpf, onlyCpfDigits } from "@/lib/cpf";
+
+// "2026-10-07T23:59:59.999-03:00" -> "2026-10-07" (dia no horário de Brasília)
+const toDateInput = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) : "";
 
 const NewRT = () => {
     const navigate = useNavigate();
@@ -35,6 +41,9 @@ const NewRT = () => {
         password: "",
         confirmPassword: "",
         institutionId: "",
+        cpf: "",
+        crtNumber: "",
+        crtValidUntil: "",
     });
 
     useEffect(() => {
@@ -57,6 +66,9 @@ const NewRT = () => {
                 password: "",
                 confirmPassword: "",
                 institutionId: rt.institutionId ? String(rt.institutionId) : "",
+                cpf: rt.cpf ? maskCpf(rt.cpf) : "",
+                crtNumber: rt.crtNumber || "",
+                crtValidUntil: toDateInput(rt.crtValidUntil),
             });
         } catch (error) {
             console.error(error);
@@ -91,6 +103,21 @@ const NewRT = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (formData.cpf && !isValidCpf(formData.cpf)) {
+            toast({
+                title: "Erro na validação",
+                description: "CPF inválido.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const crtData = {
+            cpf: formData.cpf ? onlyCpfDigits(formData.cpf) : undefined,
+            crtNumber: formData.crtNumber || undefined,
+            crtValidUntil: formData.crtValidUntil || undefined,
+        };
+
         // Create Mode Validation
         if (!isEditing) {
             if (formData.password !== formData.confirmPassword) {
@@ -120,7 +147,8 @@ const NewRT = () => {
                 await rtsService.update(rtId, {
                     name: formData.name,
                     email: formData.email,
-                    phone: formData.phone
+                    phone: formData.phone,
+                    ...crtData,
                 });
                 toast({ title: "RT atualizado com sucesso!" });
             } else {
@@ -130,7 +158,8 @@ const NewRT = () => {
                     email: formData.email,
                     crm: formData.crm,
                     password: formData.password,
-                    institutionId: formData.institutionId
+                    institutionId: formData.institutionId,
+                    ...crtData,
                 });
                 toast({ title: "RT cadastrado com sucesso!" });
             }
@@ -140,7 +169,7 @@ const NewRT = () => {
             console.error(error);
             toast({
                 title: "Erro ao salvar RT",
-                description: "Tente novamente mais tarde.",
+                description: getErrorMessage(error, "Tente novamente mais tarde."),
                 variant: "destructive",
             });
         } finally {
@@ -228,6 +257,48 @@ const NewRT = () => {
                                         value={formData.phone}
                                         onChange={(e) => handleInputChange("phone", e.target.value)}
                                         placeholder="(11) 99999-9999"
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* CPF e CRT (v3): login por CPF e bloqueio de acesso com CRT vencida */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>CPF e Certidão de Responsabilidade Técnica</CardTitle>
+                            <CardDescription>
+                                O RT pode entrar no sistema com o CPF. Com a CRT vencida, o acesso é bloqueado até a renovação; o RT é avisado 30 dias antes.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="cpf">CPF</Label>
+                                    <Input
+                                        id="cpf"
+                                        inputMode="numeric"
+                                        value={formData.cpf}
+                                        onChange={(e) => handleInputChange("cpf", maskCpf(e.target.value))}
+                                        placeholder="000.000.000-00"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="crtNumber">Número da CRT</Label>
+                                    <Input
+                                        id="crtNumber"
+                                        value={formData.crtNumber}
+                                        onChange={(e) => handleInputChange("crtNumber", e.target.value)}
+                                        placeholder="CRT-0001/2026"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="crtValidUntil">Validade da CRT</Label>
+                                    <Input
+                                        id="crtValidUntil"
+                                        type="date"
+                                        value={formData.crtValidUntil}
+                                        onChange={(e) => handleInputChange("crtValidUntil", e.target.value)}
                                     />
                                 </div>
                             </div>

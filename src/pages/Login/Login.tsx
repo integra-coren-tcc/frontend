@@ -7,8 +7,16 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import styles from "./Login.module.css";
 
+const isCpf = (value: string) => !value.includes("@") && value.replace(/\D/g, "").length === 11;
+
 const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
+  login: z
+    .string()
+    .trim()
+    .refine(
+      (value) => isCpf(value) || z.string().email().safeParse(value).success,
+      "Informe um e-mail válido ou um CPF com 11 dígitos"
+    ),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
@@ -29,9 +37,9 @@ const Login: React.FC = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    // Trim email to remove accidental whitespace
+    // Trim to remove accidental whitespace; the backend accepts the CPF with or without mask
     const cleanData = {
-      email: data.email.trim(),
+      login: data.login.trim(),
       password: data.password
     };
 
@@ -74,19 +82,19 @@ const Login: React.FC = () => {
               )}
 
               <div className={styles.formGroup}>
-                <label htmlFor="email" className={styles.label}>
-                  E-mail
+                <label htmlFor="login" className={styles.label}>
+                  E-mail ou CPF
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  {...register("email")}
-                  className={`${styles.input} ${errors.email ? styles.inputError : ""}`}
-                  autoComplete="email"
+                  id="login"
+                  type="text"
+                  placeholder="seu@email.com ou 000.000.000-00"
+                  {...register("login")}
+                  className={`${styles.input} ${errors.login ? styles.inputError : ""}`}
+                  autoComplete="username"
                 />
-                {errors.email && (
-                  <span className={styles.fieldError}>{errors.email.message}</span>
+                {errors.login && (
+                  <span className={styles.fieldError}>{errors.login.message}</span>
                 )}
               </div>
 

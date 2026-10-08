@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUserStore } from "@/stores/userStore";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +15,27 @@ import { useSocket } from "@/contexts/SocketContext";
 import { notificationsService } from "@/services/notificationsService";
 import { AppNotification } from "@/@types/Notification";
 
+// Where a notification leads (v3): chamado, documento da instituição ou fiscalização
+function notificationTarget(notification: AppNotification, role: string | undefined): string | null {
+  const data = notification.data ?? {};
+  if (typeof data.ticketId === "string") return `/chamados?id=${data.ticketId}`;
+  if (typeof data.institutionDocumentId === "string") {
+    return typeof data.institutionId === "string" && role !== "RT"
+      ? `/documentos-instituicao?institutionId=${data.institutionId}`
+      : "/documentos-instituicao";
+  }
+  if (typeof data.inspectionId === "string") {
+    if (role === "RT") return `/checklistRT/${data.inspectionId}`;
+    if (role === "INSPECTOR") return `/checklist/${data.inspectionId}`;
+    if (role === "LEGAL_REPRESENTATIVE") return `/rt/history/${data.inspectionId}`;
+  }
+  return null;
+}
+
 const NotificationBell = () => {
   const { socket } = useSocket();
+  const navigate = useNavigate();
+  const role = useUserStore((state) => state.user?.role);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -64,6 +85,9 @@ const NotificationBell = () => {
   };
 
   const handleNotificationClick = async (notification: AppNotification) => {
+    const target = notificationTarget(notification, role);
+    if (target) navigate(target);
+
     if (notification.read) return;
     try {
       await notificationsService.markAsRead(notification.id);

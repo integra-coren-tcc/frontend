@@ -63,6 +63,9 @@ export default function ChangePassword() {
                 case "RT":
                     navigate("/dashboard/rt");
                     break;
+                case "LEGAL_REPRESENTATIVE":
+                    navigate("/rt/history");
+                    break;
                 default:
                     navigate("/dashboard");
             }

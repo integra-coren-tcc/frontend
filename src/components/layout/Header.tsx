@@ -31,6 +31,8 @@ const Header = (_props: HeaderProps) => {
         return "Fiscal";
       case "RT":
         return "Responsável Técnico";
+      case "LEGAL_REPRESENTATIVE":
+        return "Representante Legal";
       default:
         return "";
     }
@@ -43,7 +45,14 @@ const Header = (_props: HeaderProps) => {
 
   // Safe access to role, converting it to lowercase for MobileMenu if needed or refactoring MobileMenu
   const userRole = user?.role || "RT";
-  const userTypeForMenu = userRole === "ADMIN" ? "admin" : userRole === "INSPECTOR" ? "inspector" : "rt";
+  const userTypeForMenu =
+    userRole === "ADMIN"
+      ? "admin"
+      : userRole === "INSPECTOR"
+        ? "inspector"
+        : userRole === "LEGAL_REPRESENTATIVE"
+          ? "legalRepresentative"
+          : "rt";
 
   return (
     <header className="bg-card border-b border-border px-6 py-4">

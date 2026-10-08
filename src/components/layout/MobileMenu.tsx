@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Building2, Users, FileText, Calendar, TrendingUp, ClipboardCheck, AlertTriangle, Target, BookOpen } from "lucide-react";
+import { Menu, X, Building2, Users, FileText, Calendar, TrendingUp, ClipboardCheck, AlertTriangle, Target, BookOpen, Library, MessagesSquare, FolderOpen, GraduationCap, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 
 interface MobileMenuProps {
-  userType: "admin" | "inspector" | "rt";
+  userType: "admin" | "inspector" | "rt" | "legalRepresentative";
 }
 
 const MobileMenu = ({ userType }: MobileMenuProps) => {
@@ -42,6 +42,10 @@ const MobileMenu = ({ userType }: MobileMenuProps) => {
           { icon: Building2, label: "Nova Instituição", path: "/admin/institutions/new" },
           { icon: Users, label: "Novo Fiscal", path: "/admin/fiscals/new" },
           { icon: Users, label: "Novo RT", path: "/admin/rts/new" },
+          { icon: Briefcase, label: "Representantes Legais", path: "/admin/representantes" },
+          { icon: Library, label: "Biblioteca", path: "/biblioteca" },
+          { icon: FolderOpen, label: "Documentos das Instituições", path: "/documentos-instituicao" },
+          { icon: GraduationCap, label: "Tutorial", path: "/tutorial" },
           { icon: BookOpen, label: "Ajuda & Wiki", path: "/wiki" },
         ];
       case "inspector":
@@ -51,13 +55,28 @@ const MobileMenu = ({ userType }: MobileMenuProps) => {
           { icon: ClipboardCheck, label: "Checklist", path: "/checklist" },
           { icon: AlertTriangle, label: "Pendências por Instituição", path: "/dashboard/fiscal/pendencias" },
           { icon: Target, label: "Metas", path: "/dashboard/fiscal/metas" },
-          { icon: FileText, label: "Meus Relatórios", path: "/fiscal/reports" },
+          { icon: MessagesSquare, label: "Chamados", path: "/chamados" },
+          { icon: FolderOpen, label: "Documentos das Instituições", path: "/documentos-instituicao" },
+          { icon: Library, label: "Biblioteca", path: "/biblioteca" },
+          { icon: GraduationCap, label: "Tutorial", path: "/tutorial" },
           { icon: BookOpen, label: "Ajuda & Wiki", path: "/wiki" },
         ];
       case "rt":
         return [
           { icon: TrendingUp, label: "Dashboard", path: "/dashboard/rt" },
           { icon: FileText, label: "Histórico da Instituição", path: "/rt/history" },
+          { icon: MessagesSquare, label: "Chamados", path: "/chamados" },
+          { icon: FolderOpen, label: "Documentos da Instituição", path: "/documentos-instituicao" },
+          { icon: Library, label: "Biblioteca", path: "/biblioteca" },
+          { icon: GraduationCap, label: "Tutorial", path: "/tutorial" },
+          { icon: BookOpen, label: "Ajuda & Wiki", path: "/wiki" },
+        ];
+      case "legalRepresentative":
+        return [
+          { icon: FileText, label: "Histórico da Instituição", path: "/rt/history" },
+          { icon: FolderOpen, label: "Documentos da Instituição", path: "/documentos-instituicao" },
+          { icon: Library, label: "Biblioteca", path: "/biblioteca" },
+          { icon: GraduationCap, label: "Tutorial", path: "/tutorial" },
           { icon: BookOpen, label: "Ajuda & Wiki", path: "/wiki" },
         ];
       default:
