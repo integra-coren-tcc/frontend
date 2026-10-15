@@ -68,7 +68,7 @@ const Header = (_props: HeaderProps) => {
           <div>
             <h1 className="text-xl font-semibold text-foreground">IntegraCoren</h1>
             <p className="text-sm text-muted-foreground">
-              Sistema de Fiscalização de UBS
+              Sistema de Fiscalização de Instituições de Saúde
             </p>
           </div>
         </div>
