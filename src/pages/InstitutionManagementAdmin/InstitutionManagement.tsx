@@ -89,7 +89,7 @@ const InstitutionManagement = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Gerenciar Instituições</h1>
               <p className="text-muted-foreground mt-1">
-                Cadastre e gerencie unidades de saúde no sistema
+                Cadastre e gerencie instituições de saúde no sistema
               </p>
             </div>
           </div>

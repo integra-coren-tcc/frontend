@@ -15,7 +15,7 @@ const Index: React.FC = () => {
           </div>
         </div>
         <h1 className={styles.indexTitle}>FiscSaúde</h1>
-        <p className={styles.indexSubtitle}>Sistema de Fiscalização de Unidades de Saúde</p>
+        <p className={styles.indexSubtitle}>Sistema de Fiscalização de Instituições de Saúde</p>
         <p className={styles.indexDescription}>
           Plataforma completa para monitoramento e fiscalização de UBS
         </p>

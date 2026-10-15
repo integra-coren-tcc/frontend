@@ -61,7 +61,7 @@ const Login: React.FC = () => {
             </div>
           </div>
           <h1 className={styles.loginTitle}>IntegraCoren</h1>
-          <p className={styles.loginSubtitle}>Sistema de Fiscalização de Unidades de Saúde</p>
+          <p className={styles.loginSubtitle}>Sistema de Fiscalização de Instituições de Saúde</p>
         </div>
 
         {/* Login Card */}
