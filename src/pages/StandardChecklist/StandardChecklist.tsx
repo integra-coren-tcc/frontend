@@ -21,7 +21,7 @@ const StandardChecklist = () => {
         switch (category) {
             case "ILEGALIDADE": return "Ilegalidades";
             case "IRREGULARIDADE": return "Irregularidades";
-            case "INFRACAO_ETICA": return "Infrações Éticas";
+            case "INFRACAO_ETICA": return "Questões Éticas";
             case "QUESTAO_TRABALHISTA": return "Questões Trabalhistas";
             default: return category;
         }

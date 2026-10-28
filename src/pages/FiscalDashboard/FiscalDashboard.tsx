@@ -532,7 +532,7 @@ const FiscalDashboard: React.FC = () => {
               >
                 <Calendar className={`${styles.actionIcon} ${styles.infoText}`} />
                 <div>
-                  <div className={styles.actionTitle}>Agendar Nova Fiscalização</div>
+                  <div className={styles.actionTitle}>Programar nova fiscalização</div>
                   <div className={styles.actionDescription}>Criar novo agendamento</div>
                 </div>
               </button>

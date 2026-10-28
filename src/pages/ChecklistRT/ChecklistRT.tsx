@@ -28,7 +28,7 @@ import OutcomeSummary from "@/components/inspections/OutcomeSummary";
 const CATEGORY_MAP: Record<ItemType, string> = {
   [ItemType.ILEGALIDADE]: "Ilegalidades",
   [ItemType.IRREGULARIDADE]: "Irregularidades",
-  [ItemType.INFRACAO_ETICA]: "Infrações Éticas",
+  [ItemType.INFRACAO_ETICA]: "Questões Éticas",
   [ItemType.QUESTAO_TRABALHISTA]: "Questões Trabalhistas",
 };
 
@@ -422,7 +422,8 @@ const ChecklistRT: React.FC = () => {
                   )}
 
                   {/* Evidence Upload Form - Enabled for NON_COMPLIANT and AWAITING_CORRECTION */}
-                  {(item.status === ItemStatus.NON_COMPLIANT || item.status === ItemStatus.AWAITING_CORRECTION) && (
+                  {[ItemStatus.NON_COMPLIANT, ItemStatus.AWAITING_CORRECTION, ItemStatus.PENDING, ItemStatus.IN_PROGRESS].includes(item.status as ItemStatus) &&
+                    inspection.status !== InspectionStatus.COMPLETED && (
                     <div className={styles.evidenceForm}>
                       <h4>Enviar Correção</h4>
                       <textarea
