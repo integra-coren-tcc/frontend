@@ -8,36 +8,32 @@ import { FIXED_CHECKLIST_ITEMS, FixedChecklistItem } from "@/constants/fixed-ite
 const StandardChecklist = () => {
     const navigate = useNavigate();
 
-    // Group items by category
+    // Agrupa conforme o documento de Notificação Pessoa Jurídica (item 3.x)
+    const NOTIF_TITLES: Record<string, string> = {
+        "3.0": "Inexistência ou inadequação de planejamento e programação da atividade de Enfermagem",
+        "3.3": "Inexistência de Enfermeiro em setor ou período em que são desenvolvidas atividades de Enfermagem",
+        "3.5": "Exercício Ilegal da Enfermagem",
+        "3.6": "Inexistência de anotação de responsabilidade técnica do serviço de Enfermagem",
+        "3.7": "Inexistência de Registro de Empresa",
+        "3.8": "Profissional exercendo atividade com impedimento por processo ético transitado em julgado",
+        "3.10": "Inexistência ou número insuficiente de profissionais de Enfermagem em evento esportivo",
+        "3.12": "Técnico(s) e/ou auxiliar(es) sem supervisão, orientação e direção de enfermeiro",
+        "3.13": "Inexistência ou inadequação de documento(s) de gerenciamento dos processos de trabalho",
+        "3.14": "Inexistência ou inadequação dos registros relativos à assistência de Enfermagem",
+        "3.15": "Inexistência de Comissões de Ética de Enfermagem",
+    };
+    const notifOf = (item: FixedChecklistItem) => item.description.match(/^Notif\. (\d+\.\d+)/)?.[1] ?? "";
     const groupedItems = FIXED_CHECKLIST_ITEMS.reduce((acc, item) => {
-        if (!acc[item.category]) {
-            acc[item.category] = [];
-        }
-        acc[item.category].push(item);
+        const key = notifOf(item);
+        (acc[key] ||= []).push(item);
         return acc;
     }, {} as Record<string, FixedChecklistItem[]>);
 
-    const getCategoryLabel = (category: string) => {
-        switch (category) {
-            case "ILEGALIDADE": return "Ilegalidades";
-            case "IRREGULARIDADE": return "Irregularidades";
-            case "INFRACAO_ETICA": return "Questões Éticas";
-            case "QUESTAO_TRABALHISTA": return "Questões Trabalhistas";
-            default: return category;
-        }
-    };
+    const getCategoryLabel = (key: string) => `${key} – ${NOTIF_TITLES[key] ?? "Outras notificações"}`;
+    const getCategoryColor = (_key: string) => "text-slate-700 bg-slate-50 border-slate-200";
 
-    const getCategoryColor = (category: string) => {
-        switch (category) {
-            case "ILEGALIDADE": return "text-red-600 bg-red-50 border-red-200";
-            case "IRREGULARIDADE": return "text-orange-600 bg-orange-50 border-orange-200";
-            case "INFRACAO_ETICA": return "text-purple-600 bg-purple-50 border-purple-200";
-            case "QUESTAO_TRABALHISTA": return "text-blue-600 bg-blue-50 border-blue-200";
-            default: return "text-gray-600 bg-gray-50 border-gray-200";
-        }
-    };
-
-    const categories = Object.keys(groupedItems) as Array<keyof typeof groupedItems>;
+    const categories = Object.keys(groupedItems).sort((x, y) => parseFloat(x.replace(".", "")) - parseFloat(y.replace(".", "")) || 0);
+    categories.sort((x, y) => { const [a1, a2] = x.split(".").map(Number), [b1, b2] = y.split(".").map(Number); return a1 - b1 || a2 - b2; });
 
     return (
         <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
