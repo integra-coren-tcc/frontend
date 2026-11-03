@@ -29,11 +29,11 @@ const StandardChecklist = () => {
         return acc;
     }, {} as Record<string, FixedChecklistItem[]>);
 
-    const getCategoryLabel = (key: string) => `${key} – ${NOTIF_TITLES[key] ?? "Outras notificações"}`;
-    const getCategoryColor = (_key: string) => "text-slate-700 bg-slate-50 border-slate-200";
+    const isIlegal = (key: string) => Number(key.split(".")[1]) <= 12;
+    const getCategoryLabel = (key: string) => `${key} – ${NOTIF_TITLES[key] ?? "Outras notificações"} (${isIlegal(key) ? "Ilegalidade" : "Irregularidade"})`;
+    const getCategoryColor = (key: string) => isIlegal(key) ? "text-red-600 bg-red-50 border-red-200" : "text-orange-600 bg-orange-50 border-orange-200";
 
-    const categories = Object.keys(groupedItems).sort((x, y) => parseFloat(x.replace(".", "")) - parseFloat(y.replace(".", "")) || 0);
-    categories.sort((x, y) => { const [a1, a2] = x.split(".").map(Number), [b1, b2] = y.split(".").map(Number); return a1 - b1 || a2 - b2; });
+    const categories = Object.keys(groupedItems).sort((x, y) => { const [a1, a2] = x.split(".").map(Number), [b1, b2] = y.split(".").map(Number); return a1 - b1 || a2 - b2; });
 
     return (
         <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
