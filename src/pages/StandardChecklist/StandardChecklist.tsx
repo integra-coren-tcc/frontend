@@ -61,12 +61,15 @@ const StandardChecklist = () => {
 
                 {/* Content */}
                 <div className="grid gap-6">
-                    {categories.map((category) => (
+                    {categories.map((category, idx) => (
                         <div key={category} className="space-y-4">
-                            <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${getCategoryColor(category)}`}>
-                                <AlertTriangle className="h-5 w-5" />
-                                <h2 className="font-semibold text-lg">{getCategoryLabel(category)}</h2>
-                            </div>
+                            {(idx === 0 || isIlegal(category) !== isIlegal(categories[idx - 1])) && (
+                                <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${getCategoryColor(category)}`}>
+                                    <AlertTriangle className="h-5 w-5" />
+                                    <h2 className="font-semibold text-xl">{isIlegal(category) ? "Ilegalidades (3.0 a 3.12)" : "Irregularidades (3.13 em diante)"}</h2>
+                                </div>
+                            )}
+                            <h3 className="font-semibold text-base text-foreground px-1">{getCategoryLabel(category).replace(/ \((Ilegalidade|Irregularidade)\)$/, "")}</h3>
 
                             <div className="bg-card rounded-lg border shadow-sm">
                                 <Accordion type="single" collapsible className="w-full">
