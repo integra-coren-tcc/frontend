@@ -78,7 +78,14 @@ const ChecklistRT: React.FC = () => {
 
   const handleFileChange = (publicId: string, files: FileList | null) => {
     if (!files) return;
-    const fileArray = Array.from(files);
+    const MAX_MB = 5;
+    const fileArray = Array.from(files).filter((f) => {
+      if (f.size > MAX_MB * 1024 * 1024) {
+        alert(`O arquivo "${f.name}" excede o limite de ${MAX_MB} MB.`);
+        return false;
+      }
+      return true;
+    });
     setEvidenceFiles(prev => ({
       ...prev,
       [publicId]: [...(prev[publicId] || []), ...fileArray]
@@ -422,10 +429,10 @@ const ChecklistRT: React.FC = () => {
                   )}
 
                   {/* Evidence Upload Form - Enabled for NON_COMPLIANT and AWAITING_CORRECTION */}
-                  {[ItemStatus.NON_COMPLIANT, ItemStatus.AWAITING_CORRECTION, ItemStatus.PENDING, ItemStatus.IN_PROGRESS].includes(item.status as ItemStatus) &&
+                  {[ItemStatus.NON_COMPLIANT, ItemStatus.AWAITING_CORRECTION, ItemStatus.PENDING, ItemStatus.IN_PROGRESS, ItemStatus.AWAITING_ANALYSIS].includes(item.status as ItemStatus) &&
                     inspection.status !== InspectionStatus.COMPLETED && (
                     <div className={styles.evidenceForm}>
-                      <h4>Enviar Correção</h4>
+                      <h4>{item.status === ItemStatus.AWAITING_ANALYSIS ? "Enviar outro arquivo ou complemento" : "Enviar Correção"}</h4>
                       <textarea
                         className={styles.textarea}
                         placeholder="Descreva a correção realizada..."
@@ -450,6 +457,7 @@ const ChecklistRT: React.FC = () => {
                           <Paperclip size={16} style={{ marginRight: 8 }} />
                           Anexar Comprovantes (PDF ou Imagem)
                         </label>
+                        <small style={{ display: 'block', marginTop: 4, color: '#6b7280' }}>Limite: 5 MB por arquivo.</small>
 
                         {/* File List */}
                         {evidenceFiles[item.publicId] && evidenceFiles[item.publicId].length > 0 && (

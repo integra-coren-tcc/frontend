@@ -30,6 +30,7 @@ const RTDashboard: React.FC = () => {
 
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
+  const inspectionsRef = React.useRef<Inspection[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [showReportModal, setShowReportModal] = useState(false);
@@ -67,8 +68,9 @@ const RTDashboard: React.FC = () => {
     socket.on('inspection_updated', (data) => {
       console.log('RT Dashboard - Inspection updated:', data);
 
-      // If we implemented actorId check
-      // if (data.actorId === user?.id) return; 
+      if (data.actorId && user?.id && data.actorId === user.id) return;
+      const evId = data.publicId ?? data.inspectionId;
+      if (evId && !inspectionsRef.current.some((i) => i.id === evId)) return;
 
       loadDashboardData();
 
@@ -123,6 +125,7 @@ const RTDashboard: React.FC = () => {
       );
 
       setInspections(myInspections);
+      inspectionsRef.current = myInspections;
 
       // Calcular Stats
 
@@ -202,8 +205,8 @@ const RTDashboard: React.FC = () => {
 
   const handleButtonClick = (inspection: Inspection) => {
     if (inspection.status === InspectionStatus.COMPLETED) {
-      setSelectedFiscalization(inspection);
-      setShowReportModal(true);
+      // Relatório real da fiscalização (o modal antigo exibia dados fixos de exemplo)
+      navigate(`/checklistRT/${inspection.id}`);
     } else if (inspection.status === InspectionStatus.AWAITING_CORRECTION) {
       // Redirecionar para tela de resolução de pendências (ChecklistRT)
       navigate(`/checklistRT/${inspection.id}`);

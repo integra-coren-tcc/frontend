@@ -269,6 +269,9 @@ const ChecklistFiscal: React.FC = () => {
     }
   };
 
+  const pendingByType = (type: ItemType) =>
+    checklistItems.filter((i) => i.itemType === type && i.status === ItemStatus.PENDING).length;
+
   const closedItemStatuses = [ItemStatus.COMPLIANT, ItemStatus.NOT_APPLICABLE];
   const openItemsCount = checklistItems.filter((item) => !closedItemStatuses.includes(item.status)).length;
 
@@ -699,14 +702,14 @@ const ChecklistFiscal: React.FC = () => {
                   type="button"
                   className={`${styles.button} ${styles.buttonSuccess}`}
                   onClick={() => setShowCloseModal(true)}
-                  disabled={saving || statusCounts.awaitingAnalysis > 0}
+                  disabled={saving || openItemsCount > 0}
                 >
                   <Flag className={styles.buttonIcon} />
                   Encerrar Fiscalização
                 </button>
-                {statusCounts.awaitingAnalysis > 0 && (
+                {openItemsCount > 0 && (
                   <span className={styles.tooltipText}>
-                    Analise as respostas enviadas pelo RT antes de encerrar.
+                    Só é possível encerrar quando todos os itens estiverem conformes ou não se aplicarem ({openItemsCount} em aberto).
                   </span>
                 )}
               </div>
@@ -729,7 +732,7 @@ const ChecklistFiscal: React.FC = () => {
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: 14, color: statusCounts.pending > 0 ? '#dc2626' : '#666' }}>
                   {statusCounts.pending > 0
-                    ? `${statusCounts.pending} ${statusCounts.pending === 1 ? "item pendente" : "itens pendentes"} — avalie todos para finalizar.`
+                    ? `${statusCounts.pending} ${statusCounts.pending === 1 ? "item pendente" : "itens pendentes"} (${pendingByType(ItemType.ILEGALIDADE)} em ilegalidades e ${pendingByType(ItemType.IRREGULARIDADE)} em irregularidades) — avalie todos para finalizar.`
                     : "Todos os itens foram avaliados."}
                 </span>
               </div>
@@ -914,6 +917,7 @@ const ChecklistFiscal: React.FC = () => {
                                 className={`${styles.button} ${styles.buttonSmall} ${styles.buttonSuccessOutline}`}
                                 onClick={() => updateItemStatus(item.publicId, ItemStatus.COMPLIANT)}
                                 disabled={saving}
+                                style={{ padding: '14px 28px', fontSize: 16, fontWeight: 600 }}
                               >
                                 <CheckCircle className={styles.buttonIcon} />
                                 Aprovar Correção
@@ -923,6 +927,7 @@ const ChecklistFiscal: React.FC = () => {
                                 className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDangerOutline}`}
                                 onClick={() => setJustifications(prev => ({ ...prev, [item.publicId]: " " }))} // Abre textarea
                                 disabled={saving}
+                                style={{ padding: '14px 28px', fontSize: 16, fontWeight: 600 }}
                               >
                                 <XCircle className={styles.buttonIcon} />
                                 Reprovar

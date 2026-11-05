@@ -36,7 +36,7 @@ const InspectionHistory = () => {
         // também as que estão em andamento.
         const data = await inspectionsService.getAll({
           perPage: 100,
-          ...(isRt ? { compliedOnly: true } : {}),
+          ...(isRt ? { status: "COMPLETED" } : {}),
         });
         // Mais recentes primeiro
         data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

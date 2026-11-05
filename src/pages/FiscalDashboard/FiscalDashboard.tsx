@@ -56,6 +56,7 @@ const FiscalDashboard: React.FC = () => {
 
   const [upcomingFiscalizations, setUpcomingFiscalizations] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
+  const inspectionsRef = React.useRef<Inspection[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [startingInspectionId, setStartingInspectionId] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -80,6 +81,10 @@ const FiscalDashboard: React.FC = () => {
         console.log('Ignoring self-notification');
         return;
       }
+
+      // Ignora eventos de fiscalizações de outros fiscais
+      const evId = data.publicId ?? data.inspectionId;
+      if (evId && !inspectionsRef.current.some((i) => i.id === evId)) return;
 
       // Refresh data
       loadDashboardData();
@@ -118,6 +123,7 @@ const FiscalDashboard: React.FC = () => {
       ]);
 
       setUpcomingFiscalizations(inspections);
+      inspectionsRef.current = inspections;
 
       setNearDeadlineCount(
         pendingGroups.reduce((sum: number, group) => sum + group.nearDeadlineCount, 0)
